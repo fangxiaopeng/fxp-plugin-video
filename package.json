@@ -1,0 +1,29 @@
+{
+  "name": "fxp-plugin-video",
+  "version": "1.0.0",
+  "description": "play real video, by hikvison SDK",
+  "cordova": {
+    "id": "fxp-plugin-video",
+    "platforms": [
+      "android"
+    ]
+  },
+  "repository": {
+    "type": "",
+    "url": ""
+  },
+  "keywords": [
+    "cordova",
+    "video",
+    "hikvison",
+    "phonegap",
+    "ecosystem:cordova",
+    "cordova-android"
+  ],
+  "author": "",
+  "license": "Apache 2.0",
+  "bugs": {
+    "url": ""
+  },
+  "homepage": ""
+}

@@ -1,0 +1,101 @@
+<?xml version='1.0' encoding='utf-8'?>
+<plugin xmlns:android="http://schemas.android.com/apk/res/android" id="fxp-plugin-video"
+    version="1.0.0" xmlns="http://apache.org/cordova/ns/plugins/1.0">
+    <name>video</name>
+    <!-- 一个plugin可以有多个module，类似于Android Studio中project和module的概念-->
+    <!-- js-module name可随意命名,src值为此module对应js文件的相对路径 -->
+    <!-- 插件id.js-module的name值】对应安装后video.js中cordova.define方法第一个参数，以及其在cordova_plugin.js中的id值 -->
+    <js-module name="HIKVideo" src="www/video.js">
+        <!-- target值即为js调用插件方法时所用的对象名,可随意命名；对应安装后cordova_plugin.js中clobbers值 -->
+        <clobbers target="fxp.plugin.HIKVideo" />
+    </js-module>
+    <!-- 可添加多个平台，name值为平台名-->
+    <platform name="android">
+        <config-file parent="/*" target="res/xml/config.xml">
+            <!-- 注册插件module，feature的name值为需要注册的js-module的name值 -->
+            <feature name="HIKVideo">
+                <!-- name值随意，value值为【将插件id中"-"替换为"."后的字符串】.【feature的name值】-->
+                <param name="android-package" value="fxp.plugin.video.HIKVideo" />
+            </feature>
+        </config-file>
+        <config-file parent="/*" target="AndroidManifest.xml">
+            <!-- 此处添加所需权限 -->
+            <uses-permission android:name="android.permission.INTERNET" />
+            <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+            <uses-permission android:name="android.permission.RECORD_AUDIO" />
+            <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+        </config-file>
+        <config-file target="AndroidManifest.xml" parent="/manifest/application">
+            <!-- 此处添加activity -->
+            <activity 
+                android:configChanges="keyboardHidden|orientation|screenSize" 
+                android:launchMode="singleTask"     
+                android:name="fxp.plugin.video.HCVideoActivity" 
+                android:screenOrientation="landscape" 
+                android:exported="false">
+            </activity>
+        </config-file>
+        <!-- 将插件文件放到指定目录：src为在插件安装包中的相对路径，target-dir为在插件安装后的相对路径 -->
+        <!-- 将java类文件放到【src/包名】目录，注意：此处所写包名须与java类中包名一致 -->
+        <source-file src="src/android/code/HIKVideo.java" target-dir="src/fxp.plugin.video" />
+        <source-file src="src/android/code/VideoInfo.java" target-dir="src/fxp.plugin.video" />
+        <source-file src="src/android/code/HCVideoActivity.java" target-dir="src/fxp.plugin.video" />
+        <source-file src="src/android/code/activity_hcvideo.xml" target-dir="res/layout" />
+        <!-- 将依赖包文件放到【libs】目录，插件安装后Sync即可自动添加依赖关系，如果没有自动添加，可以手动添加 -->
+        <source-file src="src/android/libs/AudioEngineSDK.jar" target-dir="libs" />
+        <source-file src="src/android/libs/HCNetSDK.jar" target-dir="libs" />
+        <source-file src="src/android/libs/jna.jar" target-dir="libs" />
+        <source-file src="src/android/libs/PlayerSDK.jar" target-dir="libs" />
+        <!-- 引入armeabi库文件 -->
+        <source-file src="src/android/libs/armeabi/libgnustl_shared.so" target-dir="libs/armeabi" />
+        <source-file src="src/android/libs/armeabi/libHCAlarm.so" target-dir="libs/armeabi" />
+        <source-file src="src/android/libs/armeabi/libHCCore.so" target-dir="libs/armeabi" />
+        <source-file src="src/android/libs/armeabi/libHCCoreDevCfg.so" target-dir="libs/armeabi" />
+        <source-file src="src/android/libs/armeabi/libHCDisplay.so" target-dir="libs/armeabi" />
+        <source-file src="src/android/libs/armeabi/libHCGeneralCfgMgr.so" target-dir="libs/armeabi" />
+        <source-file src="src/android/libs/armeabi/libHCIndustry.so" target-dir="libs/armeabi" />
+        <source-file src="src/android/libs/armeabi/libhcnetsdk.so" target-dir="libs/armeabi" />
+        <source-file src="src/android/libs/armeabi/libHCPlayBack.so" target-dir="libs/armeabi" />
+        <source-file src="src/android/libs/armeabi/libHCPreview.so" target-dir="libs/armeabi" />
+        <source-file src="src/android/libs/armeabi/libHCVoiceTalk.so" target-dir="libs/armeabi" />
+        <source-file src="src/android/libs/armeabi/libhpr.so" target-dir="libs/armeabi" />
+        <source-file src="src/android/libs/armeabi/libjnidispatch.so" target-dir="libs/armeabi" />
+        <source-file src="src/android/libs/armeabi/libopensslwrap.so" target-dir="libs/armeabi" />
+        <source-file src="src/android/libs/armeabi/libPlayCtrl_L.so" target-dir="libs/armeabi" />
+        <source-file src="src/android/libs/armeabi/libPlayCtrl.so" target-dir="libs/armeabi" />
+        <source-file src="src/android/libs/armeabi/libSystemTransform.so" target-dir="libs/armeabi" />
+        <!-- 引入arm64-v8a库文件 -->
+        <source-file src="src/android/libs/arm64-v8a/libHCAlarm.so" target-dir="libs/arm64-v8a" />
+        <source-file src="src/android/libs/arm64-v8a/libHCCore.so" target-dir="libs/arm64-v8a" />
+        <source-file src="src/android/libs/arm64-v8a/libHCCoreDevCfg.so" target-dir="libs/arm64-v8a" />
+        <source-file src="src/android/libs/arm64-v8a/libHCDisplay.so" target-dir="libs/arm64-v8a" />
+        <source-file src="src/android/libs/arm64-v8a/libHCGeneralCfgMgr.so" target-dir="libs/arm64-v8a" />
+        <source-file src="src/android/libs/arm64-v8a/libHCIndustry.so" target-dir="libs/arm64-v8a" />
+        <source-file src="src/android/libs/arm64-v8a/libhcnetsdk.so" target-dir="libs/arm64-v8a" />
+        <source-file src="src/android/libs/arm64-v8a/libHCPlayBack.so" target-dir="libs/arm64-v8a" />
+        <source-file src="src/android/libs/arm64-v8a/libHCPreview.so" target-dir="libs/arm64-v8a" />
+        <source-file src="src/android/libs/arm64-v8a/libHCVoiceTalk.so" target-dir="libs/arm64-v8a" />
+        <source-file src="src/android/libs/arm64-v8a/libjnidispatch.so" target-dir="libs/arm64-v8a" />
+        <source-file src="src/android/libs/arm64-v8a/libPlayCtrl_L.so" target-dir="libs/arm64-v8a" />
+        <source-file src="src/android/libs/arm64-v8a/libPlayCtrl.so" target-dir="libs/arm64-v8a" />
+        <source-file src="src/android/libs/arm64-v8a/libSystemTransform.so" target-dir="libs/arm64-v8a" />
+        <!-- 引入armeabi-v7a库文件 -->
+        <source-file src="src/android/libs/armeabi-v7a/libgnustl_shared.so" target-dir="libs/armeabi-v7a" />
+        <source-file src="src/android/libs/armeabi-v7a/libHCAlarm.so" target-dir="libs/armeabi-v7a" />
+        <source-file src="src/android/libs/armeabi-v7a/libHCCore.so" target-dir="libs/armeabi-v7a" />
+        <source-file src="src/android/libs/armeabi-v7a/libHCCoreDevCfg.so" target-dir="libs/armeabi-v7a" />
+        <source-file src="src/android/libs/armeabi-v7a/libHCDisplay.so" target-dir="libs/armeabi-v7a" />
+        <source-file src="src/android/libs/armeabi-v7a/libHCGeneralCfgMgr.so" target-dir="libs/armeabi-v7a" />
+        <source-file src="src/android/libs/armeabi-v7a/libHCIndustry.so" target-dir="libs/armeabi-v7a" />
+        <source-file src="src/android/libs/armeabi-v7a/libhcnetsdk.so" target-dir="libs/armeabi-v7a" />
+        <source-file src="src/android/libs/armeabi-v7a/libHCPlayBack.so" target-dir="libs/armeabi-v7a" />
+        <source-file src="src/android/libs/armeabi-v7a/libHCPreview.so" target-dir="libs/armeabi-v7a" />
+        <source-file src="src/android/libs/armeabi-v7a/libHCVoiceTalk.so" target-dir="libs/armeabi-v7a" />
+        <source-file src="src/android/libs/armeabi-v7a/libhpr.so" target-dir="libs/armeabi-v7a" />
+        <source-file src="src/android/libs/armeabi-v7a/libjnidispatch.so" target-dir="libs/armeabi-v7a" />
+        <source-file src="src/android/libs/armeabi-v7a/libopensslwrap.so" target-dir="libs/armeabi-v7a" />
+        <source-file src="src/android/libs/armeabi-v7a/libPlayCtrl_L.so" target-dir="libs/armeabi-v7a" />
+        <source-file src="src/android/libs/armeabi-v7a/libPlayCtrl.so" target-dir="libs/armeabi-v7a" />
+        <source-file src="src/android/libs/armeabi-v7a/libSystemTransform.so" target-dir="libs/armeabi-v7a" />
+    </platform>
+</plugin>
