@@ -3,6 +3,10 @@
 
         当前支持单路实时监控视频，后续会支持多路视频，以及监控视频回放等功能。
 
+        安装：
+        cordova plugin add fxp-plugin-video
+
+
         用法如下：
 
         参数格式：
