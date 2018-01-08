@@ -9,21 +9,22 @@
     ]
   },
   "repository": {
-    "type": "",
-    "url": ""
+    "type": "git",
+    "url": "https://github.com/fangxiaopeng/fxp-plugin-video"
   },
   "keywords": [
     "cordova",
     "video",
     "hikvison",
+    "monitor",
     "phonegap",
     "ecosystem:cordova",
     "cordova-android"
   ],
-  "author": "",
+  "author": "fangxiaopeng",
   "license": "Apache 2.0",
   "bugs": {
     "url": ""
   },
-  "homepage": ""
+  "homepage": "https://github.com/fangxiaopeng"
 }
