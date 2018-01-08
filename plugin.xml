@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
 <plugin xmlns:android="http://schemas.android.com/apk/res/android" id="fxp-plugin-video"
-    version="1.0.1" xmlns="http://apache.org/cordova/ns/plugins/1.0">
+    version="1.0.2" xmlns="http://apache.org/cordova/ns/plugins/1.0">
     <name>video</name>
     <!-- 一个plugin可以有多个module，类似于Android Studio中project和module的概念-->
     <!-- js-module name可随意命名,src值为此module对应js文件的相对路径 -->

@@ -1,7 +1,7 @@
 {
   "name": "fxp-plugin-video",
-  "version": "1.0.1",
-  "description": "play real video, by hikvison SDK",
+  "version": "1.0.2",
+  "description": "Play monitoring video, based on hikvison SDK",
   "cordova": {
     "id": "fxp-plugin-video",
     "platforms": [
