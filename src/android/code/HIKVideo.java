@@ -30,7 +30,7 @@ public class HIKVideo extends CordovaPlugin {
         this.executeArgs = args;
 
         if (action.equals("playSingle")) {
-            Log.e(TAG, "execute:playSingle");
+            Log.i(TAG, "execute:playSingle");
             toHCVideoActivity(getVedioInfo(args));
         } else {
             return false;
@@ -47,7 +47,7 @@ public class HIKVideo extends CordovaPlugin {
      * @date 2018/1/5 下午7:51
      */
     private void toHCVideoActivity(VideoInfo videoInfo) {
-        Log.e(TAG, "toHCVideoActivity");
+        Log.i(TAG, "toHCVideoActivity");
 
         Intent intent = new Intent(this.cordova.getActivity(), HCVideoActivity.class);
         Bundle bundle = new Bundle();
@@ -70,22 +70,11 @@ public class HIKVideo extends CordovaPlugin {
         JSONObject jsonArgs = new JSONObject(args.getString(0));
 
         String host = (String) jsonArgs.get("host");
-        Log.e("host", "" + host);
-
         String port = (String) jsonArgs.get("port");
-        Log.e("port", "" + port);
-
         String user = (String) jsonArgs.get("user");
-        Log.e("user", "" + user);
-
         String pass = (String) jsonArgs.get("pass");
-        Log.e("pass", "" + pass);
-
         String channel = (String) jsonArgs.get("channel");
-        Log.e("channel", "" + channel);
-
         String desc = (String) jsonArgs.get("desc");
-        Log.e("desc", "" + desc);
 
         VideoInfo videoInfo = new VideoInfo();
         videoInfo.setIp(host);
@@ -102,15 +91,14 @@ public class HIKVideo extends CordovaPlugin {
     public void onActivityResult(int requestCode, int resultCode, Intent intent) {
         if (requestCode == videoRequestCode && this.callbackContext != null) {
             String resultMsg = intent.getExtras().getString("result");
-            Log.e(TAG,"resultCode:" + resultCode);
-            Log.e(TAG,"resultMsg:" + resultMsg);
+            Log.i(TAG,"resultCode:" + resultCode + ",resultMsg:" + resultMsg);
             switch (resultCode){
                 case RESULT_NORMAL:
-                    Log.e(TAG,"RESULT_NORMAL");
+                    Log.i(TAG,"RESULT_NORMAL");
                     callbackContext.success("success");
                     break;
                 case RESULT_ERROR:
-                    Log.e(TAG,"RESULT_ERROR");
+                    Log.i(TAG,"RESULT_ERROR");
                     callbackContext.error(resultMsg);
                     break;
             }

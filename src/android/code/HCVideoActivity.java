@@ -105,8 +105,6 @@ public class HCVideoActivity extends Activity implements View.OnClickListener {
 
         videoInfo = (VideoInfo) bundle.getSerializable("videoInfo");
 
-        Log.e(TAG, "videoInfo:" + videoInfo.toString());
-
         if (videoInfo != null) {
             title = videoInfo.getDesc();
         }
@@ -177,20 +175,20 @@ public class HCVideoActivity extends Activity implements View.OnClickListener {
 
     @Override
     public void onBackPressed() {
-        Log.e(TAG, "onBackPressed");
+        Log.i(TAG, "onBackPressed");
         HCNetSDK.getInstance().NET_DVR_Logout_V30(Login_id);
         quitCurrentActivity(RESULT_NORMAL,resultMsg);
         super.onBackPressed();
     }
 
     protected void onRestoreInstanceState(Bundle paramBundle) {
-        Log.e(TAG, "onRestoreInstanceState");
+        Log.i(TAG, "onRestoreInstanceState");
         this.iPort = paramBundle.getInt("iPort");
         super.onRestoreInstanceState(paramBundle);
     }
 
     protected void onSaveInstanceState(Bundle paramBundle) {
-        Log.e(TAG, "onSaveInstanceState");
+        Log.i(TAG, "onSaveInstanceState");
         paramBundle.putInt("iPort", this.iPort);
         super.onSaveInstanceState(paramBundle);
     }
@@ -205,7 +203,7 @@ public class HCVideoActivity extends Activity implements View.OnClickListener {
      */
     private boolean initHCNetSDK() {
         if (!HCNetSDK.getInstance().NET_DVR_Init()) {
-            Log.e(TAG, "HCNetSDK init is failed!");
+            Log.i(TAG, "HCNetSDK init is failed!");
             return false;
         }
         HCNetSDK.getInstance().NET_DVR_SetLogToFile(3, "/mnt/sdcard/sdklog/", true);
@@ -242,17 +240,15 @@ public class HCVideoActivity extends Activity implements View.OnClickListener {
                 return -1;
             }
 
-            //LogonDevice Link_CreateLink fail[7].
             Login_id = HCNetSDK.getInstance().NET_DVR_Login_V30(videoInfo.getIp(), videoInfo.getPort(), videoInfo.getUserName(), videoInfo.getPassword(), m_oNetDvrDeviceInfoV30);
 
-            Log.e(TAG, "Login_id:" + Login_id);
-
             if (Login_id < 0) {
-                return -1;
+                // 调用 NET_DVR_GetLastError 获取错误码，通过错误码判断出错原因
+                int errorCode = HCNetSDK.getInstance().NET_DVR_GetLastError();
+                Log.i(TAG, "NET_DVR_Login_V30 is failed! errorCode:" + errorCode);
+                Log.i(TAG, "NET_DVR_Login_V30 is failed! errorMsg:" + getNETDVRErrorMsg(errorCode));
+                quitCurrentActivity(RESULT_ERROR,getNETDVRErrorMsg(errorCode));
             }
-
-            Log.e(TAG, "doInBackground m_oNetDvrDeviceInfoV30.byChanNum:" + m_oNetDvrDeviceInfoV30.byChanNum);
-            Log.e(TAG, "doInBackground m_oNetDvrDeviceInfoV30.byIPChanNum:" + m_oNetDvrDeviceInfoV30.byIPChanNum);
 
             if (m_oNetDvrDeviceInfoV30.byChanNum > 0) {
                 m_iStartChan = m_oNetDvrDeviceInfoV30.byStartChan;
@@ -261,9 +257,6 @@ public class HCVideoActivity extends Activity implements View.OnClickListener {
                 m_iStartChan = m_oNetDvrDeviceInfoV30.byStartDChan;
                 m_iChanNum = m_oNetDvrDeviceInfoV30.byIPChanNum + m_oNetDvrDeviceInfoV30.byHighDChanNum * 256;
             }
-
-            Log.e(TAG, "doInBackground m_oNetDvrDeviceInfoV30.byStartDChan:" + m_oNetDvrDeviceInfoV30.byStartDChan);
-            Log.e(TAG, "doInBackground m_iChanNum:" + m_iChanNum);
 
             ExceptionCallBack exceptionCallBack = getExceptiongCbf();
             if (exceptionCallBack == null || !HCNetSDK.getInstance().NET_DVR_SetExceptionCallBack(exceptionCallBack)) {
@@ -296,7 +289,7 @@ public class HCVideoActivity extends Activity implements View.OnClickListener {
             if (m_bInsideDecode) {
                 if (m_iChanNum > 1) // more than a channel
                 {
-                    Log.e(TAG, "more than a channel");
+                    Log.i(TAG, "more than a channel");
                     m_iStartChan = m_iStartChan + Integer.parseInt(videoInfo.getChannel());
                 }
                 if (player_id < 0) {
@@ -322,12 +315,9 @@ public class HCVideoActivity extends Activity implements View.OnClickListener {
         RealPlayCallBack localRealPlayCallBack = getRealPlayerCbf();
         if (localRealPlayCallBack == null)
         {
-            Log.e(TAG, "fRealDataCallBack object is failed!");
+            Log.i(TAG, "fRealDataCallBack object is failed!");
             return;
         }
-        Log.e(TAG, "preview channel:" + channelNum);
-        Log.e(TAG, "startSinglePreview Login_id:" + Login_id);
-        Log.e(TAG, "startSinglePreview player_id:" + player_id);
 
         NET_DVR_PREVIEWINFO localNET_DVR_PREVIEWINFO = new NET_DVR_PREVIEWINFO();
         // 通道号，模拟通道号从1开始，数字通道号从33开始，具体取值在登录接口返回
@@ -341,14 +331,12 @@ public class HCVideoActivity extends Activity implements View.OnClickListener {
         // 实时预览，返回值-1表示失败
         player_id = HCNetSDK.getInstance().NET_DVR_RealPlay_V40(loginId, localNET_DVR_PREVIEWINFO, localRealPlayCallBack);
 
-        Log.e(TAG, "startSinglePreview player_id:" + player_id);
-
         if (player_id < 0)
         {
             // 调用 NET_DVR_GetLastError 获取错误码，通过错误码判断出错原因
             int errorCode = HCNetSDK.getInstance().NET_DVR_GetLastError();
-            Log.e(TAG, "NET_DVR_RealPlay is failed! errorCode:" + errorCode);
-            Log.e(TAG, "NET_DVR_RealPlay is failed! errorMsg:" + getNETDVRErrorMsg(errorCode));
+            Log.i(TAG, "NET_DVR_RealPlay is failed! errorCode:" + errorCode);
+            Log.i(TAG, "NET_DVR_RealPlay is failed! errorMsg:" + getNETDVRErrorMsg(errorCode));
             HCNetSDK.getInstance().NET_DVR_Logout_V30(Login_id);
             quitCurrentActivity(RESULT_ERROR,getNETDVRErrorMsg(errorCode));
         }
@@ -362,7 +350,7 @@ public class HCVideoActivity extends Activity implements View.OnClickListener {
      * @date 2017/12/29 上午11:32
      */
     private void stopSinglePreview() {
-        Log.e(TAG, "stopSinglePreview");
+        Log.i(TAG, "stopSinglePreview");
 
         if (player_id < 0) {
             return;
@@ -378,7 +366,7 @@ public class HCVideoActivity extends Activity implements View.OnClickListener {
     }
 
     private void stopSinglePlayer() {
-        Log.e(TAG, "stopSinglePlayer");
+        Log.i(TAG, "stopSinglePlayer");
         Player.getInstance().stopSound();
         if ((Player.getInstance().stop(this.iPort)) && (Player.getInstance().closeStream(this.iPort)) && (Player.getInstance().freePort(this.iPort)))
             this.iPort = -1;
