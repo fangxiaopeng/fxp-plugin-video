@@ -34,6 +34,12 @@
                 android:screenOrientation="landscape" 
                 android:exported="false">
             </activity>
+            <activity 
+                android:configChanges="keyboardHidden|orientation|screenSize" 
+                android:launchMode="singleTask"     
+                android:name="fxp.plugin.video.MonitorVedioActivity" 
+                android:exported="false">
+            </activity>
         </config-file>
         <!-- 将插件文件放到指定目录：src为在插件安装包中的相对路径，target-dir为在插件安装后的相对路径 -->
         <!-- 将java类文件放到【src/包名】目录，注意：此处所写包名须与java类中包名一致 -->
@@ -41,6 +47,9 @@
         <source-file src="src/android/code/VideoInfo.java" target-dir="src/fxp.plugin.video" />
         <source-file src="src/android/code/HCVideoActivity.java" target-dir="src/fxp.plugin.video" />
         <source-file src="src/android/code/activity_hcvideo.xml" target-dir="res/layout" />
+        <source-file src="src/android/code/MonitorVedioActivity.java" target-dir="src/fxp.plugin.video" />
+        <source-file src="src/android/code/PlaySurfaceView.java" target-dir="src/fxp.plugin.video" />
+        <source-file src="src/android/code/activity_monitor_vedio.xml" target-dir="res/layout" />
         <!-- 将依赖包文件放到【libs】目录，插件安装后Sync即可自动添加依赖关系，如果没有自动添加，可以手动添加 -->
         <source-file src="src/android/libs/AudioEngineSDK.jar" target-dir="libs" />
         <source-file src="src/android/libs/HCNetSDK.jar" target-dir="libs" />

@@ -14,12 +14,8 @@ var exec = require('cordova/exec');
                 exec(successCallback,errorCallback,"HIKVideo","playSingle",[params]);
             };
             
-                // var exec = require('cordova/exec');
-                // var Video = function(){};
-                // Video.prototype.playSingle=function(params,success, error) {
-                //         cordova.exec(success,error,"HIKVideo","playSingle",[params]);
-                // };
-                // var video = new Video();
-                // module.exports = video;
-
+            exports.playVideo=function(params, successCallback, errorCallback){
+                exec(successCallback,errorCallback,"HIKVideo","playVideo",[params]);
+            };
+            
 // });

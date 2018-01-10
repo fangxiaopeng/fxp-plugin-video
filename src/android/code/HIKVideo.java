@@ -18,7 +18,9 @@ public class HIKVideo extends CordovaPlugin {
 
     private JSONArray executeArgs;
 
-    private final int videoRequestCode = 500;
+    private final int REQUEST_HCVideo = 500;
+
+    private final int REQUEST_MonitorVideo = 501;
 
     private static final int RESULT_NORMAL = 10;  // 正常返回
 
@@ -32,7 +34,10 @@ public class HIKVideo extends CordovaPlugin {
         if (action.equals("playSingle")) {
             Log.i(TAG, "execute:playSingle");
             toHCVideoActivity(getVedioInfo(args));
-        } else {
+        }else if (action.equals("playVideo")){
+            Log.i(TAG, "execute:playVideo");
+            toMonitorVideoActivity(getVedioInfo(args));
+        }else {
             return false;
         }
 
@@ -54,7 +59,27 @@ public class HIKVideo extends CordovaPlugin {
         bundle.putSerializable("videoInfo", videoInfo);
         intent.putExtras(bundle);
         if (this.cordova != null) {
-            this.cordova.startActivityForResult((CordovaPlugin) this, intent, videoRequestCode);
+            this.cordova.startActivityForResult((CordovaPlugin) this, intent, REQUEST_HCVideo);
+        }
+    }
+
+    /**
+     * 跳转到单路/多路视频播放页面
+     *
+     * @author fxp
+     * @mail 850899969@qq.com
+     * @date 2018/1/10 下午7:59
+     *
+     */
+    private void toMonitorVideoActivity(VideoInfo videoInfo) {
+        Log.e(TAG, "toMonitorVideoActivity");
+
+        Intent intent = new Intent(this.cordova.getActivity(), MonitorVedioActivity.class);
+        Bundle bundle = new Bundle();
+        bundle.putSerializable("videoInfo", videoInfo);
+        intent.putExtras(bundle);
+        if (this.cordova != null) {
+            this.cordova.startActivityForResult((CordovaPlugin) this, intent, REQUEST_MonitorVideo);
         }
     }
 
@@ -89,19 +114,41 @@ public class HIKVideo extends CordovaPlugin {
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent intent) {
-        if (requestCode == videoRequestCode && this.callbackContext != null) {
+        switch (requestCode){
+            case REQUEST_HCVideo:
+                Log.i(TAG,"back from HCVideoActivity");
+                break;
+            case REQUEST_MonitorVideo:
+                Log.i(TAG,"back from MonitorVedioActivity");
+                break;
+        }
+        setCallBack(resultCode,intent);
+    }
+
+    /**
+     * 设置js回调
+     *
+     * @author fxp 
+     * @mail 850899969@qq.com
+     * @date 2018/1/10 下午8:01
+     * 
+     */
+    private void setCallBack(int resultCode, Intent intent){
+        if (this.callbackContext != null){
             String resultMsg = intent.getExtras().getString("result");
-            Log.i(TAG,"resultCode:" + resultCode + ",resultMsg:" + resultMsg);
+            Log.i(TAG,"resultCode:" + resultCode);
+            Log.i(TAG,"resultMsg:" + resultMsg);
             switch (resultCode){
                 case RESULT_NORMAL:
                     Log.i(TAG,"RESULT_NORMAL");
                     callbackContext.success("success");
                     break;
                 case RESULT_ERROR:
-                    Log.i(TAG,"RESULT_ERROR");
+                    Log.e(TAG,"RESULT_ERROR");
                     callbackContext.error(resultMsg);
                     break;
             }
         }
     }
+
 }
