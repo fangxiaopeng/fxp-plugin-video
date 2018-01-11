@@ -166,11 +166,6 @@ public class MonitorVedioActivity extends Activity implements SurfaceHolder.Call
 
 			iLogId = HCNetSDK.getInstance().NET_DVR_Login_V30(ip, port, user, pwd, m_oNetDvrDeviceInfoV30);
 
-			if (iLogId == -1)
-			{
-
-			}
-
 			if (iLogId < 0)
 			{
 				return -1;
@@ -214,7 +209,9 @@ public class MonitorVedioActivity extends Activity implements SurfaceHolder.Call
 
 			if (loginState < 0)
 			{
-				return;
+				// 调用 NET_DVR_GetLastError 获取错误码，通过错误码判断出错原因
+				int errorCode = HCNetSDK.getInstance().NET_DVR_GetLastError();
+				quitCurrentActivity(RESULT_ERROR,"登录失败");
 			}
 			if (needDecode)
 			{
