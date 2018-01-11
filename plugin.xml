@@ -29,16 +29,26 @@
             <!-- 此处添加activity -->
             <activity 
                 android:configChanges="keyboardHidden|orientation|screenSize" 
-                android:launchMode="singleTask"     
+                android:launchMode="singleInstance"     
                 android:name="fxp.plugin.video.HCVideoActivity" 
                 android:screenOrientation="landscape" 
-                android:exported="false">
+                android:exported="true">
+                <intent-filter>  
+                    <action  android:name="fxp.plugin.video.HCVideoActivity"/>  
+                    <category  android:name="android.intent.category.DEFAULT"/>  
+                    <category  android:name="$PACKAGE_NAME"/>  
+                </intent-filter>
             </activity>
             <activity 
                 android:configChanges="keyboardHidden|orientation|screenSize" 
-                android:launchMode="singleTask"     
+                android:launchMode="singleInstance"     
                 android:name="fxp.plugin.video.MonitorVedioActivity" 
-                android:exported="false">
+                android:exported="true">
+                <intent-filter>  
+                    <action  android:name="fxp.plugin.video.MonitorVedioActivity"/>  
+                    <category  android:name="android.intent.category.DEFAULT"/>  
+                    <category  android:name="$PACKAGE_NAME"/>  
+                </intent-filter>
             </activity>
         </config-file>
         <!-- 将插件文件放到指定目录：src为在插件安装包中的相对路径，target-dir为在插件安装后的相对路径 -->
@@ -50,6 +60,9 @@
         <source-file src="src/android/code/MonitorVedioActivity.java" target-dir="src/fxp.plugin.video" />
         <source-file src="src/android/code/PlaySurfaceView.java" target-dir="src/fxp.plugin.video" />
         <source-file src="src/android/code/activity_monitor_vedio.xml" target-dir="res/layout" />
+        <source-file src="src/android/code/MethodUtils.java" target-dir="src/fxp.plugin.video" />
+        <source-file src="src/android/code/LoginAsyncTask.java" target-dir="src/fxp.plugin.video" />
+        <source-file src="src/android/code/AsyncTaskExecuteListener.java" target-dir="src/fxp.plugin.video" />
         <!-- 将依赖包文件放到【libs】目录，插件安装后Sync即可自动添加依赖关系，如果没有自动添加，可以手动添加 -->
         <source-file src="src/android/libs/AudioEngineSDK.jar" target-dir="libs" />
         <source-file src="src/android/libs/HCNetSDK.jar" target-dir="libs" />

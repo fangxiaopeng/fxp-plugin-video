@@ -1,9 +1,7 @@
 package fxp.plugin.video;
 
 import android.app.Activity;
-import android.app.ProgressDialog;
 import android.content.Intent;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.SurfaceHolder;
@@ -13,7 +11,6 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.TextView;
 
-import com.hikvision.netsdk.ExceptionCallBack;
 import com.hikvision.netsdk.HCNetSDK;
 import com.hikvision.netsdk.NET_DVR_DEVICEINFO_V30;
 import com.hikvision.netsdk.NET_DVR_PREVIEWINFO;
@@ -21,6 +18,8 @@ import com.hikvision.netsdk.RealPlayCallBack;
 import com.fxp.videoDemo.R;
 
 import org.MediaPlayer.PlayM4.Player;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * @author fxp
@@ -109,8 +108,8 @@ public class HCVideoActivity extends Activity implements View.OnClickListener {
             title = videoInfo.getDesc();
         }
 
-        if (!initHCNetSDK()) {
-            quitCurrentActivity(RESULT_ERROR,"HCNetSDK init failed");
+        if (!MethodUtils.getInstance().initHCNetSDK()) {
+            quitCurrentActivity(RESULT_ERROR, "HCNetSDK init failed");
             return;
         }
     }
@@ -126,7 +125,36 @@ public class HCVideoActivity extends Activity implements View.OnClickListener {
 
         cameraDescTextView.setText(title);
 
-        new LoginAndVedioTask().execute(videoInfo);
+        new LoginAsyncTask(this, m_iStartChan, m_iChanNum, new AsyncTaskExecuteListener() {
+            @Override
+            public void asyncTaskResult(String result) {
+                Log.i(TAG, "asyncTaskResult-" + result);
+                loginResultHandler(result);
+            }
+        }).execute(videoInfo);
+    }
+
+    /**
+     * 登录结果处理
+     *
+     * @param result
+     */
+    private void loginResultHandler(String result) {
+        try {
+            JSONObject jsonObject = new JSONObject(result);
+            Login_id = jsonObject.getInt("iLogId");
+            m_iChanNum = jsonObject.getInt("iChanNum");
+            m_iStartChan = jsonObject.getInt("iStartChan");
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        if (Login_id < -1) {
+            // 调用 NET_DVR_GetLastError 获取错误码，通过错误码判断出错原因
+            int errorCode = HCNetSDK.getInstance().NET_DVR_GetLastError();
+            quitCurrentActivity(RESULT_ERROR, MethodUtils.getInstance().getNETDVRErrorMsg(errorCode));
+        } else {
+            playSingleVideo(Login_id);
+        }
     }
 
     /**
@@ -166,7 +194,7 @@ public class HCVideoActivity extends Activity implements View.OnClickListener {
         switch (view.getId()) {
             case R.id.back_btn:
                 HCNetSDK.getInstance().NET_DVR_Logout_V30(Login_id);
-                quitCurrentActivity(RESULT_NORMAL,resultMsg);
+                quitCurrentActivity(RESULT_NORMAL, resultMsg);
                 break;
             default:
                 break;
@@ -177,7 +205,7 @@ public class HCVideoActivity extends Activity implements View.OnClickListener {
     public void onBackPressed() {
         Log.i(TAG, "onBackPressed");
         HCNetSDK.getInstance().NET_DVR_Logout_V30(Login_id);
-        quitCurrentActivity(RESULT_NORMAL,resultMsg);
+        quitCurrentActivity(RESULT_NORMAL, resultMsg);
         super.onBackPressed();
     }
 
@@ -193,82 +221,6 @@ public class HCVideoActivity extends Activity implements View.OnClickListener {
         super.onSaveInstanceState(paramBundle);
     }
 
-
-    /**
-     * 初始化海康视频SDK
-     *
-     * @author fxp
-     * @mail 850899969@qq.com
-     * @date 2017/12/28 下午3:16
-     */
-    private boolean initHCNetSDK() {
-        if (!HCNetSDK.getInstance().NET_DVR_Init()) {
-            Log.i(TAG, "HCNetSDK init is failed!");
-            return false;
-        }
-        HCNetSDK.getInstance().NET_DVR_SetLogToFile(3, "/mnt/sdcard/sdklog/", true);
-
-        return true;
-    }
-
-    /**
-     * 登录硬盘录像机，播放视频
-     *
-     * @author fxp
-     * @mail 850899969@qq.com
-     * @date 2017/12/29 上午10:11
-     */
-    private class LoginAndVedioTask extends AsyncTask<VideoInfo, Integer, Integer> {
-
-        private ProgressDialog dialog;
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-            dialog = new ProgressDialog(HCVideoActivity.this);
-            dialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-            dialog.setMessage("正在加载...");
-            dialog.show();
-        }
-
-        @Override
-        protected Integer doInBackground(VideoInfo... videoInfos) {
-
-            m_oNetDvrDeviceInfoV30 = new NET_DVR_DEVICEINFO_V30();
-
-            if (null == m_oNetDvrDeviceInfoV30) {
-                return -1;
-            }
-
-            Login_id = HCNetSDK.getInstance().NET_DVR_Login_V30(videoInfo.getIp(), videoInfo.getPort(), videoInfo.getUserName(), videoInfo.getPassword(), m_oNetDvrDeviceInfoV30);
-
-            if (Login_id < 0) {
-                return -1;
-            }
-
-            if (m_oNetDvrDeviceInfoV30.byChanNum > 0) {
-                m_iStartChan = m_oNetDvrDeviceInfoV30.byStartChan;
-                m_iChanNum = m_oNetDvrDeviceInfoV30.byChanNum;
-            } else if (m_oNetDvrDeviceInfoV30.byIPChanNum > 0) {
-                m_iStartChan = m_oNetDvrDeviceInfoV30.byStartDChan;
-                m_iChanNum = m_oNetDvrDeviceInfoV30.byIPChanNum + m_oNetDvrDeviceInfoV30.byHighDChanNum * 256;
-            }
-
-            ExceptionCallBack exceptionCallBack = getExceptiongCbf();
-            if (exceptionCallBack == null || !HCNetSDK.getInstance().NET_DVR_SetExceptionCallBack(exceptionCallBack)) {
-                return -1;
-            }
-
-            return Login_id;
-        }
-
-        @Override
-        protected void onPostExecute(Integer result) {
-            dialog.dismiss();
-            playSingleVideo(result);
-        }
-    }
-
     /**
      * 播放监控视频
      *
@@ -278,12 +230,6 @@ public class HCVideoActivity extends Activity implements View.OnClickListener {
      */
     private void playSingleVideo(int loginState) {
         try {
-            if (loginState < 0)
-            {
-                // 调用 NET_DVR_GetLastError 获取错误码，通过错误码判断出错原因
-                int errorCode = HCNetSDK.getInstance().NET_DVR_GetLastError();
-                quitCurrentActivity(RESULT_ERROR,"登录失败");
-            }
             if (m_bInsideDecode) {
                 if (m_iChanNum > 1) // more than a channel
                 {
@@ -308,11 +254,9 @@ public class HCVideoActivity extends Activity implements View.OnClickListener {
      * @mail 850899969@qq.com
      * @date 2017/12/29 上午11:32
      */
-    public void startSinglePreview(int loginId, int channelNum)
-    {
+    public void startSinglePreview(int loginId, int channelNum) {
         RealPlayCallBack localRealPlayCallBack = getRealPlayerCbf();
-        if (localRealPlayCallBack == null)
-        {
+        if (localRealPlayCallBack == null) {
             Log.i(TAG, "fRealDataCallBack object is failed!");
             return;
         }
@@ -329,14 +273,11 @@ public class HCVideoActivity extends Activity implements View.OnClickListener {
         // 实时预览，返回值-1表示失败
         player_id = HCNetSDK.getInstance().NET_DVR_RealPlay_V40(loginId, localNET_DVR_PREVIEWINFO, localRealPlayCallBack);
 
-        if (player_id < 0)
-        {
+        if (player_id < 0) {
             // 调用 NET_DVR_GetLastError 获取错误码，通过错误码判断出错原因
             int errorCode = HCNetSDK.getInstance().NET_DVR_GetLastError();
-            Log.i(TAG, "NET_DVR_RealPlay is failed! errorCode:" + errorCode);
-            Log.i(TAG, "NET_DVR_RealPlay is failed! errorMsg:" + getNETDVRErrorMsg(errorCode));
             HCNetSDK.getInstance().NET_DVR_Logout_V30(Login_id);
-            quitCurrentActivity(RESULT_ERROR,getNETDVRErrorMsg(errorCode));
+            quitCurrentActivity(RESULT_ERROR, MethodUtils.getInstance().getNETDVRErrorMsg(errorCode));
         }
     }
 
@@ -376,14 +317,10 @@ public class HCVideoActivity extends Activity implements View.OnClickListener {
      * @author fxp
      * @mail 850899969@qq.com
      * @date 2018/1/8 上午11:13
-     *
      */
-    private RealPlayCallBack getRealPlayerCbf()
-    {
-        RealPlayCallBack cbf = new RealPlayCallBack()
-        {
-            public void fRealDataCallBack(int iRealHandle, int iDataType, byte[] pDataBuffer, int iDataSize)
-            {
+    private RealPlayCallBack getRealPlayerCbf() {
+        RealPlayCallBack cbf = new RealPlayCallBack() {
+            public void fRealDataCallBack(int iRealHandle, int iDataType, byte[] pDataBuffer, int iDataSize) {
                 processRealData(1, iDataType, pDataBuffer, iDataSize, Player.STREAM_REALTIME);
             }
         };
@@ -439,75 +376,17 @@ public class HCVideoActivity extends Activity implements View.OnClickListener {
     }
 
     /**
-     * 捕获异常
-     *
-     * @author fxp
-     * @mail 850899969@qq.com
-     * @date 2017/12/28 下午3:30
-     */
-    private ExceptionCallBack getExceptiongCbf() {
-        ExceptionCallBack oExceptionCbf = new ExceptionCallBack() {
-            public void fExceptionCallBack(int iType, int iUserID, int iHandle) {
-                System.out.println("recv exception, type:" + iType);
-            }
-        };
-        return oExceptionCbf;
-    }
-
-    /**
      * 退出当前Activity，设置返回值
      *
      * @author fxp
      * @mail 850899969@qq.com
      * @date 2018/1/8 下午3:06
-     *
      */
-    private void quitCurrentActivity(int resultCode,String msg){
+    private void quitCurrentActivity(int resultCode, String msg) {
         Intent intent = new Intent();
-        intent.putExtra("result",msg);
-        HCVideoActivity.this.setResult(resultCode,intent);
+        intent.putExtra("result", msg);
+        HCVideoActivity.this.setResult(resultCode, intent);
         HCVideoActivity.this.finish();
     }
 
-    /**
-     * 获取连接错误信息
-     * 当前只例举了常见错误码对应错误信息，更新错误码信息详见《设备网络编程指南（Android）》第4章
-     * @author fxp
-     * @mail 850899969@qq.com
-     * @date 2018/1/8 下午2:44
-     *
-     */
-    private String getNETDVRErrorMsg(int errorCode){
-        String errorMsg = "";
-        switch (errorCode){
-            case 1:
-                errorMsg = "用户名或密码错误";
-                break;
-            case 2:
-                errorMsg = "无当前设备操作权限";
-                break;
-            case 3:
-                errorMsg = "SDK未初始化";
-                break;
-            case 4:
-                errorMsg = "通道号错误";
-                break;
-            case 5:
-                errorMsg = "连接到设备的用户数超过最大";
-                break;
-            case 7:
-                errorMsg = "连接设备失败";
-                break;
-            case 11:
-                errorMsg = "传送的数据有误";
-                break;
-            case 13:
-                errorMsg = "无此权限";
-                break;
-            default:
-                errorMsg = "错误码" + errorCode;
-                break;
-        }
-        return errorMsg;
-    }
 }

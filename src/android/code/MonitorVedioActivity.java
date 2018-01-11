@@ -1,10 +1,8 @@
 package fxp.plugin.video;
 
 import android.app.Activity;
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -18,14 +16,14 @@ import android.widget.FrameLayout.LayoutParams;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 
-import com.hikvision.netsdk.ExceptionCallBack;
 import com.hikvision.netsdk.HCNetSDK;
-import com.hikvision.netsdk.NET_DVR_DEVICEINFO_V30;
 import com.hikvision.netsdk.NET_DVR_PREVIEWINFO;
 import com.hikvision.netsdk.RealPlayCallBack;
 import com.fxp.videoDemo.R;
 
 import org.MediaPlayer.PlayM4.Player;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * 播放监控视频
@@ -50,9 +48,7 @@ public class MonitorVedioActivity extends Activity implements SurfaceHolder.Call
 
 	private int iPort = -1;
 
-	private int iStartChan = 0;
-
-	private NET_DVR_DEVICEINFO_V30 m_oNetDvrDeviceInfoV30 = null;
+    private int iStartChan = 0;
 
 	private DisplayMetrics metric;
 
@@ -104,22 +100,25 @@ public class MonitorVedioActivity extends Activity implements SurfaceHolder.Call
 		videoViewWidth = (metric.widthPixels / 2);
 		videoViewHeigth = (3 * videoViewWidth / 4);
 
-		if (!initSdk())
-		{
-			quitCurrentActivity(RESULT_ERROR,"HCNetSDK init failed");
-			return;
-		}
-		if (!initActivity())
-		{
-			quitCurrentActivity(RESULT_ERROR,"View init failed");
-			return;
-		}
-	}
+        if (!MethodUtils.getInstance().initHCNetSDK()) {
+            quitCurrentActivity(RESULT_ERROR, "HCNetSDK init failed");
+            return;
+        }
+        if (!initActivity()) {
+            quitCurrentActivity(RESULT_ERROR, "View init failed");
+            return;
+        }
+    }
 
-	private void initViews(){
-		new LoginAndVedioTask().execute(videoInfo);
-
-	}
+    private void initViews() {
+        new LoginAsyncTask(this, iStartChan, iChanNum, new AsyncTaskExecuteListener() {
+            @Override
+            public void asyncTaskResult(String result) {
+                Log.i(TAG, "asyncTaskResult-" + result);
+                loginResultHandler(result);
+            }
+        }).execute(videoInfo);
+    }
 
 	private boolean initActivity()
 	{
@@ -128,75 +127,28 @@ public class MonitorVedioActivity extends Activity implements SurfaceHolder.Call
 		return true;
 	}
 
-	private boolean initSdk()
-	{
-		if (!HCNetSDK.getInstance().NET_DVR_Init())
-			return false;
-		HCNetSDK.getInstance().NET_DVR_SetLogToFile(3, "/mnt/sdcard/sdklog/", true);
-		return true;
-	}
-
-	private class LoginAndVedioTask extends AsyncTask<VideoInfo, Integer, Integer>
-	{
-
-		private ProgressDialog dialog;
-
-		@Override
-		protected void onPreExecute()
-		{
-			super.onPreExecute();
-			dialog = new ProgressDialog(MonitorVedioActivity.this);
-			dialog.show();
-		}
-
-		@Override
-		protected Integer doInBackground(VideoInfo... params)
-		{
-			m_oNetDvrDeviceInfoV30 = new NET_DVR_DEVICEINFO_V30();
-
-			if (null == m_oNetDvrDeviceInfoV30)
-			{
-				return -1;
-			}
-
-			String ip = videoInfo.getIp();
-			int port = videoInfo.getPort();
-			String user = videoInfo.getUserName();
-			String pwd = videoInfo.getPassword();
-
-			iLogId = HCNetSDK.getInstance().NET_DVR_Login_V30(ip, port, user, pwd, m_oNetDvrDeviceInfoV30);
-
-			if (iLogId < 0)
-			{
-				return -1;
-			}
-			if (m_oNetDvrDeviceInfoV30.byChanNum > 0)
-			{
-				iStartChan = m_oNetDvrDeviceInfoV30.byStartChan;
-				iChanNum = m_oNetDvrDeviceInfoV30.byChanNum;
-			}
-			else if (m_oNetDvrDeviceInfoV30.byIPChanNum > 0)
-			{
-				iStartChan = m_oNetDvrDeviceInfoV30.byStartDChan;
-				iChanNum = m_oNetDvrDeviceInfoV30.byIPChanNum + m_oNetDvrDeviceInfoV30.byHighDChanNum * 256;
-			}
-
-			ExceptionCallBack exceptionCallBack = getExceptiongCbf();
-			if (exceptionCallBack == null || !HCNetSDK.getInstance().NET_DVR_SetExceptionCallBack(exceptionCallBack))
-			{
-				return -1;
-			}
-
-			return iLogId;
-		}
-
-		@Override
-		protected void onPostExecute(Integer result)
-		{
-			dialog.dismiss();
-			playVideo(result);
-		}
-	}
+    /**
+     * 登录结果处理
+     *
+     * @param result
+     */
+    private void loginResultHandler(String result) {
+        try {
+            JSONObject jsonObject = new JSONObject(result);
+            iLogId = jsonObject.getInt("iLogId");
+            iChanNum = jsonObject.getInt("iChanNum");
+            iStartChan = jsonObject.getInt("iStartChan");
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        if (iLogId < -1) {
+            // 调用 NET_DVR_GetLastError 获取错误码，通过错误码判断出错原因
+            int errorCode = HCNetSDK.getInstance().NET_DVR_GetLastError();
+            quitCurrentActivity(RESULT_ERROR, MethodUtils.getInstance().getNETDVRErrorMsg(errorCode));
+        } else {
+            playVideo(iLogId);
+        }
+    }
 
 	private void playVideo(int loginState)
 	{
@@ -207,119 +159,89 @@ public class MonitorVedioActivity extends Activity implements SurfaceHolder.Call
 			((InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(MonitorVedioActivity.this.getCurrentFocus()
 					.getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
 
-			if (loginState < 0)
-			{
-				// 调用 NET_DVR_GetLastError 获取错误码，通过错误码判断出错原因
-				int errorCode = HCNetSDK.getInstance().NET_DVR_GetLastError();
-				quitCurrentActivity(RESULT_ERROR,"登录失败");
-			}
-			if (needDecode)
-			{
-				if (iChanNum > 1)// preview more than a channel
-				{
-					if (!bMultiPlay)
-					{
-						startMultiPreview(iChanNum);
-						bMultiPlay = true;
-					}
-					else
-					{
-						stopMultiPreview();
-						bMultiPlay = false;
-					}
-				}
-				else
-				// preivew a channel
-				{
-					if (iPlayId < 0)
-					{
-						startSinglePreview();
-					}
-					else
-					{
-						stopSinglePreview();
-					}
-				}
-			}
-			else
-			{
+            if (needDecode) {
+                if (iChanNum > 1)// preview more than a channel
+                {
+                    if (!bMultiPlay) {
+                        startMultiPreview(iChanNum);
+                        bMultiPlay = true;
+                    } else {
+                        stopMultiPreview();
+                        bMultiPlay = false;
+                    }
+                } else
+                // preivew a channel
+                {
+                    if (iPlayId < 0) {
+                        startSinglePreview();
+                    } else {
+                        stopSinglePreview();
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
-			}
-		}
-		catch(Exception e)
-		{
-			e.printStackTrace();
-		}
-	}
+    private void startMultiPreview(int paramInt) {
+        playView = new PlaySurfaceView[paramInt];
+        FrameLayout localFrameLayout = new FrameLayout(this);
+        for (int i = 0; i < paramInt; i++) {
+            if (playView[i] == null) {
+                playView[i] = new PlaySurfaceView(this);
+                playView[i].setParam(metric.widthPixels, metric.heightPixels);
+                FrameLayout.LayoutParams localLayoutParams2 = new FrameLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+                localLayoutParams2.topMargin = (playView[i].getCurHeight() - i / 2 * playView[i].getCurHeight());
+                localLayoutParams2.topMargin = (i / 2 * playView[i].getCurHeight());
+                localLayoutParams2.leftMargin = (i % 2 * playView[i].getCurWidth());
+                localLayoutParams2.gravity = Gravity.TOP | Gravity.LEFT;
+                localFrameLayout.addView(playView[i], localLayoutParams2);
+            }
+            playView[i].startPreview(iLogId, i + iStartChan);
+        }
+        FrameLayout.LayoutParams localLayoutParams1 = new FrameLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+        ScrollView localScrollView = new ScrollView(this);
+        localScrollView.addView(localFrameLayout);
+        addContentView(localScrollView, localLayoutParams1);
+        iPlayId = playView[0].m_iPreviewHandle;
+    }
 
-	private void startMultiPreview(int paramInt)
-	{
-		playView = new PlaySurfaceView[paramInt];
-		FrameLayout localFrameLayout = new FrameLayout(this);
-		for (int i = 0; i < paramInt; i++)
-		{
-			if (playView[i] == null)
-			{
-				playView[i] = new PlaySurfaceView(this);
-				playView[i].setParam(metric.widthPixels, metric.heightPixels);
-				FrameLayout.LayoutParams localLayoutParams2 = new FrameLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
-				localLayoutParams2.topMargin = (playView[i].getCurHeight() - i / 2 * playView[i].getCurHeight());
-				localLayoutParams2.topMargin = (i / 2 * playView[i].getCurHeight());
-				localLayoutParams2.leftMargin = (i % 2 * playView[i].getCurWidth());
-				localLayoutParams2.gravity = Gravity.TOP | Gravity.LEFT;
-				localFrameLayout.addView(playView[i], localLayoutParams2);
-			}
-			playView[i].startPreview(iLogId, i + iStartChan);
-		}
-		FrameLayout.LayoutParams localLayoutParams1 = new FrameLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
-		ScrollView localScrollView = new ScrollView(this);
-		localScrollView.addView(localFrameLayout);
-		addContentView(localScrollView, localLayoutParams1);
-		iPlayId = playView[0].m_iPreviewHandle;
-	}
+    private void startSinglePreview() {
+        Log.i(TAG, "startSinglePreview");
 
-	private void startSinglePreview()
-	{
-		Log.i(TAG, "startSinglePreview");
+        RealPlayCallBack fRealDataCallBack = getRealPlayerCbf();
+        if (fRealDataCallBack == null) {
+            return;
+        }
 
-		RealPlayCallBack fRealDataCallBack = getRealPlayerCbf();
-		if (fRealDataCallBack == null)
-		{
-			return;
-		}
+        NET_DVR_PREVIEWINFO previewInfo = new NET_DVR_PREVIEWINFO();
+        previewInfo.lChannel = iStartChan;
+        previewInfo.dwStreamType = 1;
+        previewInfo.bBlocked = 1;
+        // HCNetSDK start preview
+        iPlayId = HCNetSDK.getInstance().NET_DVR_RealPlay_V40(iLogId, previewInfo, fRealDataCallBack);
+        if (iPlayId < 0) {
+            // 调用 NET_DVR_GetLastError 获取错误码，通过错误码判断出错原因
+            int errorCode = HCNetSDK.getInstance().NET_DVR_GetLastError();
+            HCNetSDK.getInstance().NET_DVR_Logout_V30(this.iLogId);
+            quitCurrentActivity(RESULT_ERROR, MethodUtils.getInstance().getNETDVRErrorMsg(errorCode));
+        }
+    }
 
-		NET_DVR_PREVIEWINFO previewInfo = new NET_DVR_PREVIEWINFO();
-		previewInfo.lChannel = iStartChan;
-		previewInfo.dwStreamType = 1;
-		previewInfo.bBlocked = 1;
-		// HCNetSDK start preview
-		iPlayId = HCNetSDK.getInstance().NET_DVR_RealPlay_V40(iLogId, previewInfo, fRealDataCallBack);
-		if (iPlayId < 0)
-		{
-			// 调用 NET_DVR_GetLastError 获取错误码，通过错误码判断出错原因
-			int errorCode = HCNetSDK.getInstance().NET_DVR_GetLastError();
-			HCNetSDK.getInstance().NET_DVR_Logout_V30(this.iLogId);
-			quitCurrentActivity(RESULT_ERROR,getNETDVRErrorMsg(errorCode));
-		}
-	}
+    private void stopMultiPreview() {
+        if (playView != null) {
+            for (int i = 0; i < playView.length; i++) {
+                playView[i].stopPreview();
+            }
+        }
+    }
 
-	private void stopMultiPreview()
-	{
-		if (playView != null)
-		{
-			for (int i = 0; i < playView.length; i++)
-			{
-				playView[i].stopPreview();
-			}
-		}
-	}
-
-	private void stopSinglePlayer()
-	{
-		Player.getInstance().stopSound();
-		if ((Player.getInstance().stop(this.iPort)) && (Player.getInstance().closeStream(this.iPort)) && (Player.getInstance().freePort(this.iPort)))
-			this.iPort = -1;
-	}
+    private void stopSinglePlayer() {
+        Player.getInstance().stopSound();
+        if ((Player.getInstance().stop(this.iPort)) && (Player.getInstance().closeStream(this.iPort)) && (Player.getInstance().freePort(this.iPort)))
+            this.iPort = -1;
+    }
 
 	private void stopSinglePreview()
 	{
@@ -381,27 +303,13 @@ public class MonitorVedioActivity extends Activity implements SurfaceHolder.Call
 			Player.getInstance().setVideoWindow(this.iPort, 0, null);
 	}
 
-	private ExceptionCallBack getExceptiongCbf()
-	{
-		return new ExceptionCallBack()
-		{
-			public void fExceptionCallBack(int paramAnonymousInt1, int paramAnonymousInt2, int paramAnonymousInt3)
-			{
-				System.out.println("recv exception, type:" + paramAnonymousInt1);
-			}
-		};
-	}
-
-	private RealPlayCallBack getRealPlayerCbf()
-	{
-		return new RealPlayCallBack()
-		{
-			public void fRealDataCallBack(int paramAnonymousInt1, int paramAnonymousInt2, byte[] paramAnonymousArrayOfByte, int paramAnonymousInt3)
-			{
-				MonitorVedioActivity.this.processRealData(1, paramAnonymousInt2, paramAnonymousArrayOfByte, paramAnonymousInt3, 0);
-			}
-		};
-	}
+    private RealPlayCallBack getRealPlayerCbf() {
+        return new RealPlayCallBack() {
+            public void fRealDataCallBack(int paramAnonymousInt1, int paramAnonymousInt2, byte[] paramAnonymousArrayOfByte, int paramAnonymousInt3) {
+                MonitorVedioActivity.this.processRealData(1, paramAnonymousInt2, paramAnonymousArrayOfByte, paramAnonymousInt3, 0);
+            }
+        };
+    }
 
 	public void processRealData(int iPlayViewNo, int iDataType, byte[] pDataBuffer, int iDataSize, int iStreamMode)
 	{
@@ -479,37 +387,4 @@ public class MonitorVedioActivity extends Activity implements SurfaceHolder.Call
 		MonitorVedioActivity.this.finish();
 	}
 
-	private String getNETDVRErrorMsg(int errorCode){
-		String errorMsg = "";
-		switch (errorCode){
-			case 1:
-				errorMsg = "用户名或密码错误";
-				break;
-			case 2:
-				errorMsg = "无当前设备操作权限";
-				break;
-			case 3:
-				errorMsg = "SDK未初始化";
-				break;
-			case 4:
-				errorMsg = "通道号错误";
-				break;
-			case 5:
-				errorMsg = "连接到设备的用户数超过最大";
-				break;
-			case 7:
-				errorMsg = "连接设备失败";
-				break;
-			case 11:
-				errorMsg = "传送的数据有误";
-				break;
-			case 13:
-				errorMsg = "无此权限";
-				break;
-			default:
-				errorMsg = "错误码" + errorCode;
-				break;
-		}
-		return errorMsg;
-	}
 }
