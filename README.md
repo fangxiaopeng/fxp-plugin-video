@@ -23,7 +23,7 @@
             desc:"location"
         }
 
-        3.2 播放单路视频：
+        3.2 播放单路视频（支持指定通道）：
         fxp.plugin.HIKVideo.playSingle(params,function(result){
             console.log("********************HIKVideo Success");
 
