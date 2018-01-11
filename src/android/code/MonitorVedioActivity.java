@@ -23,7 +23,7 @@ import com.hikvision.netsdk.HCNetSDK;
 import com.hikvision.netsdk.NET_DVR_DEVICEINFO_V30;
 import com.hikvision.netsdk.NET_DVR_PREVIEWINFO;
 import com.hikvision.netsdk.RealPlayCallBack;
-import com.xbrother.gongjiyunweibao.R;
+import com.fxp.videoDemo.R;
 
 import org.MediaPlayer.PlayM4.Player;
 

@@ -243,11 +243,7 @@ public class HCVideoActivity extends Activity implements View.OnClickListener {
             Login_id = HCNetSDK.getInstance().NET_DVR_Login_V30(videoInfo.getIp(), videoInfo.getPort(), videoInfo.getUserName(), videoInfo.getPassword(), m_oNetDvrDeviceInfoV30);
 
             if (Login_id < 0) {
-                // 调用 NET_DVR_GetLastError 获取错误码，通过错误码判断出错原因
-                int errorCode = HCNetSDK.getInstance().NET_DVR_GetLastError();
-                Log.i(TAG, "NET_DVR_Login_V30 is failed! errorCode:" + errorCode);
-                Log.i(TAG, "NET_DVR_Login_V30 is failed! errorMsg:" + getNETDVRErrorMsg(errorCode));
-                quitCurrentActivity(RESULT_ERROR,getNETDVRErrorMsg(errorCode));
+                return -1;
             }
 
             if (m_oNetDvrDeviceInfoV30.byChanNum > 0) {
@@ -284,13 +280,15 @@ public class HCVideoActivity extends Activity implements View.OnClickListener {
         try {
             if (loginState < 0)
             {
-                return;
+                // 调用 NET_DVR_GetLastError 获取错误码，通过错误码判断出错原因
+                int errorCode = HCNetSDK.getInstance().NET_DVR_GetLastError();
+                quitCurrentActivity(RESULT_ERROR,"登录失败");
             }
             if (m_bInsideDecode) {
                 if (m_iChanNum > 1) // more than a channel
                 {
                     Log.i(TAG, "more than a channel");
-                    m_iStartChan = m_iStartChan + Integer.parseInt(videoInfo.getChannel());
+                    m_iStartChan = Integer.parseInt(videoInfo.getChannel());
                 }
                 if (player_id < 0) {
                     startSinglePreview(Login_id, m_iStartChan);
