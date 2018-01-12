@@ -2,7 +2,6 @@ package fxp.plugin.video;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -32,80 +31,92 @@ import org.json.JSONObject;
  * @author fxp
  * @mail 850899969@qq.com
  * @date 2018/1/10 下午6:21
- *
  */
-public class MonitorVedioActivity extends Activity implements SurfaceHolder.Callback
-{
-	private String TAG = "MonitorVedioActivity";
+public class MonitorVedioActivity extends Activity implements SurfaceHolder.Callback {
 
-	private boolean bMultiPlay = false;
-	
-	private int iChanNum = 0;
+    private String TAG = "MonitorVedioActivity";
 
-	private int iLogId = -1;
+    // 多通道播放
+    private boolean bMultiPlay = false;
 
-	private int iPlayId = -1;
+    // 设备模拟通道个数
+    private int iChanNum = 0;
 
-	private int iPort = -1;
+    // 登录结果id
+    private int iLogId = -1;
 
+    // 视频播放连接标志位
+    private int iPlayId = -1;
+
+    private int iPort = -1;
+
+    // 模拟通道起始通道号
     private int iStartChan = 0;
 
-	private DisplayMetrics metric;
+    private DisplayMetrics metric;
 
-	private boolean needDecode = true;
+    // 是否需要解码
+    private boolean needDecode = true;
 
-	private PlaySurfaceView[] playView;
+    // 多通道播放surfaceView
+    private PlaySurfaceView[] playView;
 
-	private SurfaceView surfaceView;
+    // 单通道播放surfaceView
+    private SurfaceView surfaceView;
 
-	private VideoInfo videoInfo;
+    private VideoInfo videoInfo;
 
-	private LinearLayout vedioLayout;
+    private LinearLayout vedioLayout;
 
-	private int videoViewWidth;
+    // 多通道播放-视频item项宽度
+    private int videoViewWidth;
 
-	private int videoViewHeigth;
+    // 多通道播放-视频item项高度
+    private int videoViewHeigth;
 
-	private static final int RESULT_NORMAL = 10;  // 正常返回
+    // 正常返回
+    private static final int RESULT_NORMAL = 10;
 
-	private static final int RESULT_ERROR = 11; // 错误返回
+    // 错误返回
+    private static final int RESULT_ERROR = 11;
 
-	private String resultMsg = "";   // 返回信息
+    // 返回信息
+    private String resultMsg = "";
 
-	@Override
-	protected void onCreate(Bundle paramBundle)
-	{
-		super.onCreate(paramBundle);
+    @Override
+    protected void onCreate(Bundle paramBundle) {
+        super.onCreate(paramBundle);
 
-		requestWindowFeature(Window.FEATURE_NO_TITLE);
+        // 设置当前Activity no title
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
 
-		setContentView(R.layout.activity_monitor_vedio);
+        setContentView(R.layout.activity_monitor_vedio);
 
-		findViews();
+        findViews();
 
-		initData();
+        initData();
 
-		initViews();
-	}
+        initViews();
+    }
 
-	private void findViews(){
-		vedioLayout = ((LinearLayout) findViewById(R.id.vedio_layout));
-	}
+    private void findViews() {
+        vedioLayout = ((LinearLayout) findViewById(R.id.vedio_layout));
+    }
 
-	private void initData(){
-		videoInfo = ((VideoInfo) getIntent().getSerializableExtra("videoInfo"));
+    private void initData() {
+        videoInfo = ((VideoInfo) getIntent().getSerializableExtra("videoInfo"));
 
-		metric = new DisplayMetrics();
-		getWindowManager().getDefaultDisplay().getMetrics(metric);
-		videoViewWidth = (metric.widthPixels / 2);
-		videoViewHeigth = (3 * videoViewWidth / 4);
+        metric = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(metric);
+        videoViewWidth = (metric.widthPixels / 2);
+        videoViewHeigth = (3 * videoViewWidth / 4);
 
         if (!MethodUtils.getInstance().initHCNetSDK()) {
-            quitCurrentActivity(RESULT_ERROR, "HCNetSDK init failed");
+            MethodUtils.getInstance().quitActivity(MonitorVedioActivity.this, RESULT_ERROR, "HCNetSDK init failed");
             return;
         }
         if (!initActivity()) {
-            quitCurrentActivity(RESULT_ERROR, "View init failed");
+            MethodUtils.getInstance().quitActivity(MonitorVedioActivity.this, RESULT_ERROR, "View init failed");
             return;
         }
     }
@@ -120,12 +131,11 @@ public class MonitorVedioActivity extends Activity implements SurfaceHolder.Call
         }).execute(videoInfo);
     }
 
-	private boolean initActivity()
-	{
-		surfaceView = (SurfaceView) findViewById(R.id.Sur_Player);
-		surfaceView.getHolder().addCallback(this);
-		return true;
-	}
+    private boolean initActivity() {
+        surfaceView = (SurfaceView) findViewById(R.id.Sur_Player);
+        surfaceView.getHolder().addCallback(this);
+        return true;
+    }
 
     /**
      * 登录结果处理
@@ -141,23 +151,21 @@ public class MonitorVedioActivity extends Activity implements SurfaceHolder.Call
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        if (iLogId < -1) {
+        if (iLogId < 0) {
             // 调用 NET_DVR_GetLastError 获取错误码，通过错误码判断出错原因
             int errorCode = HCNetSDK.getInstance().NET_DVR_GetLastError();
-            quitCurrentActivity(RESULT_ERROR, MethodUtils.getInstance().getNETDVRErrorMsg(errorCode));
+            MethodUtils.getInstance().quitActivity(MonitorVedioActivity.this, RESULT_ERROR, MethodUtils.getInstance().getNETDVRErrorMsg(errorCode));
         } else {
             playVideo(iLogId);
         }
     }
 
-	private void playVideo(int loginState)
-	{
-		Log.i(TAG, "playVideo");
+    private void playVideo(int loginState) {
+        Log.i(TAG, "playVideo");
 
-		try
-		{
-			((InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(MonitorVedioActivity.this.getCurrentFocus()
-					.getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
+        try {
+            ((InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(MonitorVedioActivity.this.getCurrentFocus()
+                    .getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
 
             if (needDecode) {
                 if (iChanNum > 1)// preview more than a channel
@@ -216,16 +224,21 @@ public class MonitorVedioActivity extends Activity implements SurfaceHolder.Call
         }
 
         NET_DVR_PREVIEWINFO previewInfo = new NET_DVR_PREVIEWINFO();
+        // 通道号，模拟通道号从1开始，数字通道号从33开始，具体取值在登录接口返回
         previewInfo.lChannel = iStartChan;
+        // 码流类型
         previewInfo.dwStreamType = 1;
+        // 连接方式，0-TCP方式，1-UDP方式，2-多播方式，3-RTP方式，4-RTP/RTSP，5-RSTP/HTTP
+        // previewInfo.dwLinkMode = 5;
+        // 0-非阻塞取流，1-阻塞取流
         previewInfo.bBlocked = 1;
-        // HCNetSDK start preview
+        // 实时预览，返回值-1表示失败
         iPlayId = HCNetSDK.getInstance().NET_DVR_RealPlay_V40(iLogId, previewInfo, fRealDataCallBack);
         if (iPlayId < 0) {
             // 调用 NET_DVR_GetLastError 获取错误码，通过错误码判断出错原因
             int errorCode = HCNetSDK.getInstance().NET_DVR_GetLastError();
             HCNetSDK.getInstance().NET_DVR_Logout_V30(this.iLogId);
-            quitCurrentActivity(RESULT_ERROR, MethodUtils.getInstance().getNETDVRErrorMsg(errorCode));
+            MethodUtils.getInstance().quitActivity(MonitorVedioActivity.this, RESULT_ERROR, MethodUtils.getInstance().getNETDVRErrorMsg(errorCode));
         }
     }
 
@@ -243,65 +256,56 @@ public class MonitorVedioActivity extends Activity implements SurfaceHolder.Call
             this.iPort = -1;
     }
 
-	private void stopSinglePreview()
-	{
-		Log.i(TAG, "stopSinglePreview");
+    private void stopSinglePreview() {
+        Log.i(TAG, "stopSinglePreview");
 
-		if (iPlayId < 0)
-		{
-			return;
-		}
+        if (iPlayId < 0) {
+            return;
+        }
 
-		// net sdk stop preview
-		if (!HCNetSDK.getInstance().NET_DVR_StopRealPlay(iPlayId))
-		{
-			return;
-		}
+        // net sdk stop preview
+        if (!HCNetSDK.getInstance().NET_DVR_StopRealPlay(iPlayId)) {
+            return;
+        }
 
-		iPlayId = -1;
-		stopSinglePlayer();
-	}
+        iPlayId = -1;
+        stopSinglePlayer();
+    }
 
-	protected void onRestoreInstanceState(Bundle paramBundle)
-	{
-		this.iPort = paramBundle.getInt("iPort");
-		super.onRestoreInstanceState(paramBundle);
-	}
+    protected void onRestoreInstanceState(Bundle paramBundle) {
+        this.iPort = paramBundle.getInt("iPort");
+        super.onRestoreInstanceState(paramBundle);
+    }
 
-	protected void onSaveInstanceState(Bundle paramBundle)
-	{
-		paramBundle.putInt("iPort", this.iPort);
-		super.onSaveInstanceState(paramBundle);
-	}
+    protected void onSaveInstanceState(Bundle paramBundle) {
+        paramBundle.putInt("iPort", this.iPort);
+        super.onSaveInstanceState(paramBundle);
+    }
 
-	@Override
-	public void onBackPressed()
-	{
-		stopMultiPreview();
-		HCNetSDK.getInstance().NET_DVR_Logout_V30(this.iLogId);
-		quitCurrentActivity(RESULT_NORMAL,resultMsg);
-		super.onBackPressed();
-	}
+    @Override
+    public void onBackPressed() {
+        stopMultiPreview();
+        HCNetSDK.getInstance().NET_DVR_Logout_V30(this.iLogId);
+        MethodUtils.getInstance().quitActivity(MonitorVedioActivity.this, RESULT_NORMAL, resultMsg);
+        super.onBackPressed();
+    }
 
-	@Override
-	public void surfaceChanged(SurfaceHolder paramSurfaceHolder, int paramInt1, int paramInt2, int paramInt3)
-	{
-	}
+    @Override
+    public void surfaceChanged(SurfaceHolder paramSurfaceHolder, int paramInt1, int paramInt2, int paramInt3) {
+    }
 
-	@Override
-	public void surfaceCreated(SurfaceHolder paramSurfaceHolder)
-	{
-		this.surfaceView.getHolder().setFormat(-3);
-		if ((-1 != this.iPort) && (paramSurfaceHolder.getSurface().isValid()))
-			Player.getInstance().setVideoWindow(this.iPort, 0, paramSurfaceHolder);
-	}
+    @Override
+    public void surfaceCreated(SurfaceHolder paramSurfaceHolder) {
+        this.surfaceView.getHolder().setFormat(-3);
+        if ((-1 != this.iPort) && (paramSurfaceHolder.getSurface().isValid()))
+            Player.getInstance().setVideoWindow(this.iPort, 0, paramSurfaceHolder);
+    }
 
-	@Override
-	public void surfaceDestroyed(SurfaceHolder paramSurfaceHolder)
-	{
-		if ((-1 != this.iPort) && (paramSurfaceHolder.getSurface().isValid()))
-			Player.getInstance().setVideoWindow(this.iPort, 0, null);
-	}
+    @Override
+    public void surfaceDestroyed(SurfaceHolder paramSurfaceHolder) {
+        if ((-1 != this.iPort) && (paramSurfaceHolder.getSurface().isValid()))
+            Player.getInstance().setVideoWindow(this.iPort, 0, null);
+    }
 
     private RealPlayCallBack getRealPlayerCbf() {
         return new RealPlayCallBack() {
@@ -311,80 +315,52 @@ public class MonitorVedioActivity extends Activity implements SurfaceHolder.Call
         };
     }
 
-	public void processRealData(int iPlayViewNo, int iDataType, byte[] pDataBuffer, int iDataSize, int iStreamMode)
-	{
-		if (!needDecode)
-		{
+    public void processRealData(int iPlayViewNo, int iDataType, byte[] pDataBuffer, int iDataSize, int iStreamMode) {
+        if (!needDecode) {
 
-		}
-		else
-		{
-			if (HCNetSDK.NET_DVR_SYSHEAD == iDataType)
-			{
-				if (iPort >= 0)
-				{
-					return;
-				}
-				iPort = Player.getInstance().getPort();
-				if (iPort == -1)
-				{
-					return;
-				}
-				if (iDataSize > 0)
-				{
-					if (!Player.getInstance().setStreamOpenMode(iPort, iStreamMode)) // set stream mode
-					{
-						return;
-					}
-					if (!Player.getInstance().openStream(iPort, pDataBuffer, iDataSize, 2 * 1024 * 1024)) // open stream
-					{
-						return;
-					}
-					if (!Player.getInstance().play(iPort, surfaceView.getHolder()))
-					{
-						return;
-					}
-					if (!Player.getInstance().playSound(iPort))
-					{
-						return;
-					}
-				}
-			}
-			else
-			{
-				if (!Player.getInstance().inputData(iPort, pDataBuffer, iDataSize))
-				{
-					for (int i = 0; i < 4000; i++)
-					{
-						if (!Player.getInstance().inputData(iPort, pDataBuffer, iDataSize))
-						{
+        } else {
+            if (HCNetSDK.NET_DVR_SYSHEAD == iDataType) {
+                if (iPort >= 0) {
+                    return;
+                }
+                iPort = Player.getInstance().getPort();
+                if (iPort == -1) {
+                    return;
+                }
+                if (iDataSize > 0) {
+                    if (!Player.getInstance().setStreamOpenMode(iPort, iStreamMode)) // set stream mode
+                    {
+                        return;
+                    }
+                    if (!Player.getInstance().openStream(iPort, pDataBuffer, iDataSize, 2 * 1024 * 1024)) // open stream
+                    {
+                        return;
+                    }
+                    if (!Player.getInstance().play(iPort, surfaceView.getHolder())) {
+                        return;
+                    }
+                    if (!Player.getInstance().playSound(iPort)) {
+                        return;
+                    }
+                }
+            } else {
+                if (!Player.getInstance().inputData(iPort, pDataBuffer, iDataSize)) {
+                    for (int i = 0; i < 4000; i++) {
+                        if (!Player.getInstance().inputData(iPort, pDataBuffer, iDataSize)) {
 
-						}
-						else
-						{
-							break;
-						}
-						try
-						{
-							Thread.sleep(10);
-						}
-						catch(InterruptedException e)
-						{
-							e.printStackTrace();
-						}
-					}
-				}
+                        } else {
+                            break;
+                        }
+                        try {
+                            Thread.sleep(10);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
 
-			}
-		}
+            }
+        }
 
-	}
-
-	private void quitCurrentActivity(int resultCode,String msg){
-		Intent intent = new Intent();
-		intent.putExtra("result",msg);
-		MonitorVedioActivity.this.setResult(resultCode,intent);
-		MonitorVedioActivity.this.finish();
-	}
-
+    }
 }

@@ -1,7 +1,6 @@
 package fxp.plugin.video;
 
 import android.app.Activity;
-import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.SurfaceHolder;
@@ -12,7 +11,6 @@ import android.view.WindowManager;
 import android.widget.TextView;
 
 import com.hikvision.netsdk.HCNetSDK;
-import com.hikvision.netsdk.NET_DVR_DEVICEINFO_V30;
 import com.hikvision.netsdk.NET_DVR_PREVIEWINFO;
 import com.hikvision.netsdk.RealPlayCallBack;
 import com.fxp.videoDemo.R;
@@ -36,16 +34,19 @@ public class HCVideoActivity extends Activity implements View.OnClickListener {
 
     private String TAG = "HCVideoActivity";
 
-    private int Login_id = -1;   // return by NET_DVR_Login_v30
+    // 登录结果id
+    private int Login_id = -1;
 
-    private int player_id = -1;     //视频播放连接标志位
+    //视频播放连接标志位
+    private int player_id = -1;
 
-    private NET_DVR_DEVICEINFO_V30 m_oNetDvrDeviceInfoV30 = null;   //设备信息
+    // 模拟通道起始通道号
+    private int m_iStartChan = 0;
 
-    private int m_iStartChan = 0; // 模拟通道起始通道号
+    // 设备模拟通道个数
+    private int m_iChanNum = 0;
 
-    private int m_iChanNum = 0; // 设备模拟通道个数
-
+    // 是否需要解码
     private boolean m_bInsideDecode = true;
 
     private int iPort = -1;
@@ -54,11 +55,14 @@ public class HCVideoActivity extends Activity implements View.OnClickListener {
 
     private String title;
 
-    private static final int RESULT_NORMAL = 10;  // 正常返回
+    // 正常返回
+    private static final int RESULT_NORMAL = 10;
 
-    private static final int RESULT_ERROR = 11; // 错误返回
+    // 错误返回
+    private static final int RESULT_ERROR = 11;
 
-    private String resultMsg = "";   // 返回信息
+    // 返回信息
+    private String resultMsg = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -109,7 +113,7 @@ public class HCVideoActivity extends Activity implements View.OnClickListener {
         }
 
         if (!MethodUtils.getInstance().initHCNetSDK()) {
-            quitCurrentActivity(RESULT_ERROR, "HCNetSDK init failed");
+            MethodUtils.getInstance().quitActivity(HCVideoActivity.this, RESULT_ERROR, "HCNetSDK init failed");
             return;
         }
     }
@@ -151,7 +155,7 @@ public class HCVideoActivity extends Activity implements View.OnClickListener {
         if (Login_id < -1) {
             // 调用 NET_DVR_GetLastError 获取错误码，通过错误码判断出错原因
             int errorCode = HCNetSDK.getInstance().NET_DVR_GetLastError();
-            quitCurrentActivity(RESULT_ERROR, MethodUtils.getInstance().getNETDVRErrorMsg(errorCode));
+            MethodUtils.getInstance().quitActivity(HCVideoActivity.this, RESULT_ERROR, MethodUtils.getInstance().getNETDVRErrorMsg(errorCode));
         } else {
             playSingleVideo(Login_id);
         }
@@ -194,7 +198,7 @@ public class HCVideoActivity extends Activity implements View.OnClickListener {
         switch (view.getId()) {
             case R.id.back_btn:
                 HCNetSDK.getInstance().NET_DVR_Logout_V30(Login_id);
-                quitCurrentActivity(RESULT_NORMAL, resultMsg);
+                MethodUtils.getInstance().quitActivity(HCVideoActivity.this, RESULT_NORMAL, resultMsg);
                 break;
             default:
                 break;
@@ -205,7 +209,7 @@ public class HCVideoActivity extends Activity implements View.OnClickListener {
     public void onBackPressed() {
         Log.i(TAG, "onBackPressed");
         HCNetSDK.getInstance().NET_DVR_Logout_V30(Login_id);
-        quitCurrentActivity(RESULT_NORMAL, resultMsg);
+        MethodUtils.getInstance().quitActivity(HCVideoActivity.this, RESULT_NORMAL, resultMsg);
         super.onBackPressed();
     }
 
@@ -277,7 +281,7 @@ public class HCVideoActivity extends Activity implements View.OnClickListener {
             // 调用 NET_DVR_GetLastError 获取错误码，通过错误码判断出错原因
             int errorCode = HCNetSDK.getInstance().NET_DVR_GetLastError();
             HCNetSDK.getInstance().NET_DVR_Logout_V30(Login_id);
-            quitCurrentActivity(RESULT_ERROR, MethodUtils.getInstance().getNETDVRErrorMsg(errorCode));
+            MethodUtils.getInstance().quitActivity(HCVideoActivity.this, RESULT_ERROR, MethodUtils.getInstance().getNETDVRErrorMsg(errorCode));
         }
     }
 
@@ -373,20 +377,6 @@ public class HCVideoActivity extends Activity implements View.OnClickListener {
 
             }
         }
-    }
-
-    /**
-     * 退出当前Activity，设置返回值
-     *
-     * @author fxp
-     * @mail 850899969@qq.com
-     * @date 2018/1/8 下午3:06
-     */
-    private void quitCurrentActivity(int resultCode, String msg) {
-        Intent intent = new Intent();
-        intent.putExtra("result", msg);
-        HCVideoActivity.this.setResult(resultCode, intent);
-        HCVideoActivity.this.finish();
     }
 
 }

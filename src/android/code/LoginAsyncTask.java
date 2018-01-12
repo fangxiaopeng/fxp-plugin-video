@@ -33,13 +33,13 @@ public class LoginAsyncTask extends AsyncTask<VideoInfo, Integer, String> {
 
     private ProgressDialog dialog = null;
 
-    private AsyncTaskExecuteListener asyncTaskResultListener = null;
+    private AsyncTaskExecuteListener asyncTaskExecuteListener = null;
 
-    public LoginAsyncTask(Context context, int iStartChan, int iChanNum, AsyncTaskExecuteListener asyncTaskResultListener) {
+    public LoginAsyncTask(Context context, int iStartChan, int iChanNum, AsyncTaskExecuteListener asyncTaskExecuteListener) {
         this.context = context;
         this.iStartChan = iStartChan;
         this.iChanNum = iChanNum;
-        this.asyncTaskResultListener = asyncTaskResultListener;
+        this.asyncTaskExecuteListener = asyncTaskExecuteListener;
     }
 
     @Override
@@ -70,7 +70,7 @@ public class LoginAsyncTask extends AsyncTask<VideoInfo, Integer, String> {
             iChanNum = m_oNetDvrDeviceInfoV30.byIPChanNum + m_oNetDvrDeviceInfoV30.byHighDChanNum * 256;
         }
 
-        ExceptionCallBack exceptionCallBack = getExceptiongCbf();
+        ExceptionCallBack exceptionCallBack = MethodUtils.getInstance().getExceptiongCbf();
         if (exceptionCallBack == null || !HCNetSDK.getInstance().NET_DVR_SetExceptionCallBack(exceptionCallBack)) {
             return assembleAsyncResultStr(-1);
         }
@@ -88,7 +88,7 @@ public class LoginAsyncTask extends AsyncTask<VideoInfo, Integer, String> {
     protected void onPostExecute(String result) {
         super.onPostExecute(result);
         dialog.dismiss();
-        asyncTaskResultListener.asyncTaskResult(result);
+        asyncTaskExecuteListener.asyncTaskResult(result);
     }
 
     /**
@@ -107,13 +107,5 @@ public class LoginAsyncTask extends AsyncTask<VideoInfo, Integer, String> {
             e.printStackTrace();
         }
         return result.toString();
-    }
-
-    public ExceptionCallBack getExceptiongCbf() {
-        return new ExceptionCallBack() {
-            public void fExceptionCallBack(int paramAnonymousInt1, int paramAnonymousInt2, int paramAnonymousInt3) {
-                Log.e(TAG, "recv exception, type:" + paramAnonymousInt1);
-            }
-        };
     }
 }

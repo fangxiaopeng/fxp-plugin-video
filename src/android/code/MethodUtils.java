@@ -1,8 +1,11 @@
 package fxp.plugin.video;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.util.Log;
 
+import com.hikvision.netsdk.ExceptionCallBack;
 import com.hikvision.netsdk.HCNetSDK;
 
 /**
@@ -44,6 +47,34 @@ public class MethodUtils {
         HCNetSDK.getInstance().NET_DVR_SetLogToFile(3, "/mnt/sdcard/sdklog/", true);
 
         return true;
+    }
+
+
+    /**
+     * 退出Activity，设置返回值
+     *
+     * @param activity  待退出activity
+     * @param resultCode    返回码
+     * @param msg   返回信息
+     */
+    public void quitActivity(Activity activity,int resultCode, String msg){
+        Intent intent = new Intent();
+        intent.putExtra("result",msg);
+        activity.setResult(resultCode,intent);
+        activity.finish();
+    }
+
+    /**
+     * 获取异常回调
+     *
+     * @return  异常回调
+     */
+    public ExceptionCallBack getExceptiongCbf() {
+        return new ExceptionCallBack() {
+            public void fExceptionCallBack(int paramAnonymousInt1, int paramAnonymousInt2, int paramAnonymousInt3) {
+                Log.e("ExceptionCallBack", "recv exception, type:" + paramAnonymousInt1);
+            }
+        };
     }
 
     /**
