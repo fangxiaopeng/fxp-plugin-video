@@ -13,6 +13,14 @@ import com.hikvision.netsdk.RealPlayCallBack;
 
 import org.MediaPlayer.PlayM4.Player;
 
+/**
+ * 多路视频 SurfaceView
+ *
+ * @author fxp
+ * @mail 850899969@qq.com
+ * @date 2018/1/10 下午7:01
+ *
+ */
 @SuppressLint({ "NewApi" })
 public class PlaySurfaceView extends SurfaceView implements SurfaceHolder.Callback
 {
@@ -34,6 +42,32 @@ public class PlaySurfaceView extends SurfaceView implements SurfaceHolder.Callba
 		getHolder().addCallback(this);
 	}
 
+	protected void onMeasure(int paramInt1, int paramInt2)
+	{
+		super.setMeasuredDimension(-1 + this.m_iWidth, -1 + this.m_iHeight);
+	}
+
+	public void setParam(int screenWidth,int screenHeight)
+	{
+		this.m_iWidth = (screenWidth / 2);
+		this.m_iHeight = (3 * this.m_iWidth / 4);
+	}
+
+	public void setViewSize(int width,int height){
+		this.m_iWidth = width;
+		this.m_iHeight = height;
+	}
+
+	public int getCurHeight()
+	{
+		return this.m_iHeight;
+	}
+
+	public int getCurWidth()
+	{
+		return this.m_iWidth;
+	}
+
 	private RealPlayCallBack getRealPlayerCbf()
 	{
 		return new RealPlayCallBack()
@@ -47,7 +81,6 @@ public class PlaySurfaceView extends SurfaceView implements SurfaceHolder.Callba
 
 	private void processRealData(int iPlayViewNo, int iDataType, byte[] pDataBuffer, int iDataSize, int iStreamMode)
 	{
-		//   Log.i(TAG, "iPlayViewNo:" + iPlayViewNo + ",iDataType:" + iDataType + ",iDataSize:" + iDataSize);
 		if (HCNetSDK.NET_DVR_SYSHEAD == iDataType)
 		{
 			if (m_iPort >= 0)
@@ -127,27 +160,6 @@ public class PlaySurfaceView extends SurfaceView implements SurfaceHolder.Callba
 			return;
 		}
 		Log.e(TAG, "freePort is failed!" + this.m_iPort);
-	}
-
-	public int getCurHeight()
-	{
-		return this.m_iHeight;
-	}
-
-	public int getCurWidth()
-	{
-		return this.m_iWidth;
-	}
-
-	protected void onMeasure(int paramInt1, int paramInt2)
-	{
-		super.setMeasuredDimension(-1 + this.m_iWidth, -1 + this.m_iHeight);
-	}
-
-	public void setParam(int paramInt1, int paramInt2)
-	{
-		this.m_iWidth = (paramInt1 / 2);
-		this.m_iHeight = (3 * this.m_iWidth / 4);
 	}
 
 	public void startPreview(int paramInt1, int paramInt2)

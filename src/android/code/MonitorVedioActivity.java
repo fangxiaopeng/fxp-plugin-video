@@ -27,6 +27,7 @@ import org.json.JSONObject;
 /**
  * 播放监控视频
  * 支持单路/多路监控视频
+ * 配置columnNum参数可设置多通道视频播放列数
  *
  * @author fxp
  * @mail 850899969@qq.com
@@ -38,6 +39,9 @@ public class MonitorVedioActivity extends Activity implements SurfaceHolder.Call
 
     // 多通道播放
     private boolean bMultiPlay = false;
+
+    // 多通道播放-视频列数
+    private int columnNum = 2;
 
     // 设备模拟通道个数
     private int iChanNum = 0;
@@ -53,8 +57,6 @@ public class MonitorVedioActivity extends Activity implements SurfaceHolder.Call
     // 模拟通道起始通道号
     private int iStartChan = 0;
 
-    private DisplayMetrics metric;
-
     // 是否需要解码
     private boolean needDecode = true;
 
@@ -67,12 +69,6 @@ public class MonitorVedioActivity extends Activity implements SurfaceHolder.Call
     private VideoInfo videoInfo;
 
     private LinearLayout vedioLayout;
-
-    // 多通道播放-视频item项宽度
-    private int videoViewWidth;
-
-    // 多通道播放-视频item项高度
-    private int videoViewHeigth;
 
     // 正常返回
     private static final int RESULT_NORMAL = 10;
@@ -105,11 +101,6 @@ public class MonitorVedioActivity extends Activity implements SurfaceHolder.Call
 
     private void initData() {
         videoInfo = ((VideoInfo) getIntent().getSerializableExtra("videoInfo"));
-
-        metric = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(metric);
-        videoViewWidth = (metric.widthPixels / 2);
-        videoViewHeigth = (3 * videoViewWidth / 4);
 
         if (!MethodUtils.getInstance().initHCNetSDK()) {
             MethodUtils.getInstance().quitActivity(MonitorVedioActivity.this, RESULT_ERROR, "HCNetSDK init failed");
@@ -171,7 +162,7 @@ public class MonitorVedioActivity extends Activity implements SurfaceHolder.Call
                 if (iChanNum > 1)// preview more than a channel
                 {
                     if (!bMultiPlay) {
-                        startMultiPreview(iChanNum);
+                        startMultiPreview(iChanNum,columnNum);
                         bMultiPlay = true;
                     } else {
                         stopMultiPreview();
@@ -192,26 +183,42 @@ public class MonitorVedioActivity extends Activity implements SurfaceHolder.Call
         }
     }
 
-    private void startMultiPreview(int paramInt) {
-        playView = new PlaySurfaceView[paramInt];
-        FrameLayout localFrameLayout = new FrameLayout(this);
-        for (int i = 0; i < paramInt; i++) {
+    private void startMultiPreview(int chanNum,int columnNum) {
+
+        DisplayMetrics metric = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(metric);
+        // 多通道播放-视频item项宽度
+        int videoViewWidth = (metric.widthPixels / columnNum);
+        // 多通道播放-视频item项高度
+        int videoViewHeigth = (3 * videoViewWidth / 4);
+
+        playView = new PlaySurfaceView[chanNum];
+        // 建立frameLayout容纳所有通道视频画面
+        FrameLayout videoLayout = new FrameLayout(this);
+        for (int i = 0; i < chanNum; i++) {
             if (playView[i] == null) {
+                // 第i通道SurfaceView
                 playView[i] = new PlaySurfaceView(this);
-                playView[i].setParam(metric.widthPixels, metric.heightPixels);
-                FrameLayout.LayoutParams localLayoutParams2 = new FrameLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
-                localLayoutParams2.topMargin = (playView[i].getCurHeight() - i / 2 * playView[i].getCurHeight());
-                localLayoutParams2.topMargin = (i / 2 * playView[i].getCurHeight());
-                localLayoutParams2.leftMargin = (i % 2 * playView[i].getCurWidth());
-                localLayoutParams2.gravity = Gravity.TOP | Gravity.LEFT;
-                localFrameLayout.addView(playView[i], localLayoutParams2);
+                // 设置第i通道监控画面尺寸
+                playView[i].setViewSize(videoViewWidth, videoViewHeigth);
+                // 设置第i通道监控画面布局参数
+                FrameLayout.LayoutParams videoItemParams = new FrameLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+                videoItemParams.topMargin = i / columnNum * playView[i].getCurHeight();
+                videoItemParams.leftMargin = i % columnNum * playView[i].getCurWidth();
+                videoItemParams.gravity = Gravity.TOP | Gravity.LEFT;
+                // 将第i通道SurfaceView添加到FrameLayout
+                videoLayout.addView(playView[i], videoItemParams);
             }
+            // 播放第i+1通道视频
             playView[i].startPreview(iLogId, i + iStartChan);
         }
-        FrameLayout.LayoutParams localLayoutParams1 = new FrameLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
-        ScrollView localScrollView = new ScrollView(this);
-        localScrollView.addView(localFrameLayout);
-        addContentView(localScrollView, localLayoutParams1);
+        FrameLayout.LayoutParams scrollViewParams = new FrameLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+        ScrollView scrollView = new ScrollView(this);
+        // 将含有多通道视频画面的frameLayout添加到scrollView
+        scrollView.addView(videoLayout);
+        // 设置scrollView布局参数
+        addContentView(scrollView, scrollViewParams);
+        // 获取起始通道监控视频播放状态码
         iPlayId = playView[0].m_iPreviewHandle;
     }
 
