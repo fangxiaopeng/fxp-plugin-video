@@ -31,8 +31,8 @@ public class MonitorVedioActivity extends Activity {
 
     private String TAG = "MonitorVedioActivity";
 
-    // 多通道播放
-    private boolean bMultiPlay = false;
+    // 播放状态标志
+    private boolean isPlaying = false;
 
     // 多通道播放-视频列数
     private int columnNum = 2;
@@ -57,11 +57,7 @@ public class MonitorVedioActivity extends Activity {
     // 多通道播放surfaceView
     private PlaySurfaceView[] playView;
 
-    // 多通道播放-视频item项宽度
-    private int videoViewWidth = 0;
-
-    // 多通道播放-视频item项高度
-    private int videoViewHeigth = 0;
+    private DisplayMetrics metric = null;
 
     private VideoInfo videoInfo;
 
@@ -97,6 +93,9 @@ public class MonitorVedioActivity extends Activity {
     private void initData() {
         videoInfo = ((VideoInfo) getIntent().getSerializableExtra("videoInfo"));
 
+        metric = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(metric);
+
         if (!MethodUtils.getInstance().initHCNetSDK()) {
             MethodUtils.getInstance().quitActivity(MonitorVedioActivity.this, RESULT_ERROR, "HCNetSDK init failed");
             return;
@@ -107,7 +106,6 @@ public class MonitorVedioActivity extends Activity {
         new LoginAsyncTask(this, iStartChan, iChanNum, new AsyncTaskExecuteListener() {
             @Override
             public void asyncTaskResult(String result) {
-                Log.i(TAG, "asyncTaskResult-" + result);
                 loginResultHandler(result);
             }
         }).execute(videoInfo);
@@ -119,6 +117,7 @@ public class MonitorVedioActivity extends Activity {
      * @param result
      */
     private void loginResultHandler(String result) {
+        Log.i(TAG, "loginResult-" + result);
         try {
             JSONObject jsonObject = new JSONObject(result);
             iLogId = jsonObject.getInt("iLogId");
@@ -148,24 +147,16 @@ public class MonitorVedioActivity extends Activity {
                     .getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
 
             if (needDecode) {
-                if (!bMultiPlay) {
-                    DisplayMetrics metric = new DisplayMetrics();
-                    getWindowManager().getDefaultDisplay().getMetrics(metric);
-                    if (iChanNum > 1) {
-                        // 多通道播放
-                        videoViewWidth = (metric.widthPixels / columnNum);
-                        videoViewHeigth = (3 * videoViewWidth / 4);
-                    } else {
-                        // 单通道播放
+                if (!isPlaying) {
+                    if (iChanNum == 1) {
+                        // 单路播放时单列显示
                         columnNum = 1;
-                        videoViewWidth = metric.widthPixels;
-                        videoViewHeigth = metric.heightPixels;
                     }
                     startPreview(iChanNum, columnNum);
-                    bMultiPlay = true;
+                    isPlaying = true;
                 } else {
                     stopPreview();
-                    bMultiPlay = false;
+                    isPlaying = false;
                 }
             }
         } catch (Exception e) {
@@ -188,8 +179,8 @@ public class MonitorVedioActivity extends Activity {
             if (playView[i] == null) {
                 // 第i通道SurfaceView
                 playView[i] = new PlaySurfaceView(this);
-                // 设置第i通道监控画面尺寸
-                playView[i].setViewSize(videoViewWidth, videoViewHeigth);
+                // 设置第i通道监控画面尺寸，单路时全屏播放，多路时分列4：3播放
+                playView[i].setViewSize(metric.widthPixels / columnNum, columnNum == 1 ? metric.heightPixels : 3 * metric.widthPixels / (4 * columnNum));
                 // 设置第i通道监控画面布局参数
                 FrameLayout.LayoutParams videoItemParams = new FrameLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
                 videoItemParams.topMargin = i / columnNum * playView[i].getCurHeight();
@@ -201,11 +192,12 @@ public class MonitorVedioActivity extends Activity {
             // 播放第i通道视频
             playView[i].startPreview(iLogId, i + iStartChan);
         }
+        // 设置scrollView布局参数
         FrameLayout.LayoutParams scrollViewParams = new FrameLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
         ScrollView scrollView = new ScrollView(this);
         // 将含有多通道视频画面的frameLayout添加到scrollView
         scrollView.addView(videoLayout);
-        // 设置scrollView布局参数
+        // 动态添加scrollView布局
         addContentView(scrollView, scrollViewParams);
         // 获取起始通道监控视频播放状态码
         iPlayId = playView[0].m_iPreviewHandle;
