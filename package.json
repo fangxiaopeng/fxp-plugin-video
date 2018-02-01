@@ -5,6 +5,7 @@
   "cordova": {
     "id": "fxp-plugin-video",
     "platforms": [
+      "android",
       "ios"
     ]
   },
