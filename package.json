@@ -1,11 +1,11 @@
 {
   "name": "fxp-plugin-video",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Play monitoring video, based on hikvison SDK",
   "cordova": {
     "id": "fxp-plugin-video",
     "platforms": [
-      "android"
+      "ios"
     ]
   },
   "repository": {
@@ -18,8 +18,8 @@
     "hikvison",
     "monitor",
     "phonegap",
-    "ecosystem:cordova",
-    "cordova-android"
+    "cordova-android",
+    "cordova-ios"
   ],
   "author": "fangxiaopeng",
   "license": "Apache 2.0",
