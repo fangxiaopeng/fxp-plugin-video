@@ -61,6 +61,10 @@ public class PlaySurfaceView extends SurfaceView implements SurfaceHolder.Callba
         return this.m_iWidth;
     }
 
+    /**
+     * 获取实时流音视频数据
+     * @return  码流数据回调函数
+     */
     private RealPlayCallBack getRealPlayerCbf() {
         return new RealPlayCallBack() {
             public void fRealDataCallBack(int paramAnonymousInt1, int paramAnonymousInt2, byte[] paramAnonymousArrayOfByte, int paramAnonymousInt3) {
@@ -69,6 +73,15 @@ public class PlaySurfaceView extends SurfaceView implements SurfaceHolder.Callba
         };
     }
 
+    /**
+     * 通过播放库解码显示到SurfaceView
+     *
+     * @param iPlayViewNo   当前的预览句柄
+     * @param iDataType     数据类型
+     * @param pDataBuffer   存放数据的缓冲区指针
+     * @param iDataSize     缓冲区大小
+     * @param iStreamMode   实时流模式
+     */
     private void processRealData(int iPlayViewNo, int iDataType, byte[] pDataBuffer, int iDataSize, int iStreamMode) {
         if (HCNetSDK.NET_DVR_SYSHEAD == iDataType) {
             if (m_iPort >= 0) {
