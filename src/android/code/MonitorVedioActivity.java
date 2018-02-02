@@ -166,6 +166,7 @@ public class MonitorVedioActivity extends Activity {
 
     /**
      * 开始播放实时监控视频
+     * 自动适配单路/多路视频，自定义播放列数
      *
      * @param chanNum   通道数目
      * @param columnNum 展示列数
