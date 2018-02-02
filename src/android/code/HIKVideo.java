@@ -121,6 +121,8 @@ public class HIKVideo extends CordovaPlugin {
             case REQUEST_MonitorVideo:
                 Log.i(TAG,"back from MonitorVedioActivity");
                 break;
+            default:
+                break;
         }
         setCallBack(resultCode,intent);
     }
@@ -146,6 +148,8 @@ public class HIKVideo extends CordovaPlugin {
                 case RESULT_ERROR:
                     Log.e(TAG,"RESULT_ERROR");
                     callbackContext.error(resultMsg);
+                    break;
+                default:
                     break;
             }
         }
