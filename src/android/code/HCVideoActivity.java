@@ -13,7 +13,7 @@ import android.widget.TextView;
 import com.hikvision.netsdk.HCNetSDK;
 import com.hikvision.netsdk.NET_DVR_PREVIEWINFO;
 import com.hikvision.netsdk.RealPlayCallBack;
-import com.fxp.videoDemo.R;
+// import com.fxp.videoDemo.R;
 
 import org.MediaPlayer.PlayM4.Player;
 import org.json.JSONException;

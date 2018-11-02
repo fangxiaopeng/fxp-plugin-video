@@ -13,7 +13,7 @@ import android.widget.FrameLayout.LayoutParams;
 import android.widget.ScrollView;
 
 import com.hikvision.netsdk.HCNetSDK;
-import com.fxp.videoDemo.R;
+// import com.fxp.videoDemo.R;
 
 import org.json.JSONException;
 import org.json.JSONObject;
