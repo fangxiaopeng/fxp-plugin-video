@@ -52,6 +52,9 @@ Android，IOS
 该api支持Android和IOS，IOS不支持自动适配单路/多路。
 
 
+### 注意
+安卓版本插件：MonitorVedioActivity、HCVideoActivity中均有用到资源文件，因此，在插件安装完成之后，需要Rebuild安卓工程，重新生成R文件。
+
 
 
 插件代码中有详细注释，欢迎提issue or fork，共同完善。
